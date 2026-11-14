@@ -1,0 +1,65 @@
+{
+    "events": [
+      {
+        "id": "solar-flare-01",
+        "gameTrigger": "SOLAR_STORM",
+        "nasaLore": "Alertas do sistema NASA DONKI detectaram uma Erupção Solar (FLR) seguida de Partículas Energéticas Solares (SEP). Fora do campo magnético da Terra, a nave precisa ativar escudos de proteção contra radiação.",
+        "severity": "high"
+      },
+      {
+        "id": "cme-shockwave-01",
+        "gameTrigger": "RADIATION_SPIKE",
+        "nasaLore": "Uma Ejeção de Massa Coronal (CME) catalogada pela NASA acelera prótons no espaço profundo, elevando a taxa de dose equivalente (uSv/h) monitorada pelos sensores RadLab.",
+        "severity": "critical"
+      },
+      {
+        "id": "solar-radio-blackout-01",
+        "gameTrigger": "COMMS_INTERFERENCE",
+        "nasaLore": "A radiação em raios X de uma Erupção Solar (FLR) atinge a espaçonave em cerca de 8 minutos, causando interferência temporária nas comunicações de rádio com o controle da missão.",
+        "severity": "medium"
+      },
+      {
+        "id": "eclss-brine-maintenance-01",
+        "gameTrigger": "WATER_RECOVERY_DROP",
+        "nasaLore": "O sistema de suporte à vida ECLSS opera no limite: sem o processamento total da salmoura no BPA, a recuperação de água cai da capacidade máxima demonstrada de 98% para a faixa histórica de 93% a 94%.",
+        "severity": "medium"
+      }
+    ],
+    "curiosities": [
+      {
+        "id": "c-01",
+        "context": "water_recycling",
+        "text": "Dados da NASA comprovam que o sistema ECLSS da ISS demonstrou recuperar até 98% de toda a água da tripulação — incluindo suor, umidade da respiração e urina."
+      },
+      {
+        "id": "c-02",
+        "context": "oxygen_consumption",
+        "text": "No espaço, limpar água também consome ar: o reator catalítico do Water Processor Assembly (WPA) utiliza 0,0034 kg de oxigênio para cada quilo de água processada."
+      },
+      {
+        "id": "c-03",
+        "context": "life_support_daily",
+        "text": "Para missões além da órbita terrestre, a NASA calcula que cada astronauta consome cerca de 0,89 kg de oxigênio e 0,62 kg de alimentos sólidos por dia."
+      },
+      {
+        "id": "c-04",
+        "context": "food_hydration",
+        "text": "Nos cálculos nominais de suporte à vida da NASA, além dos alimentos sólidos, cerca de 1,15 kg de água por pessoa/dia já vem presente dentro da própria comida."
+      },
+      {
+        "id": "c-05",
+        "context": "solar_power",
+        "text": "Os oito conjuntos principais de painéis solares da Estação Espacial Internacional geram entre 75 kW e 90 kW de potência elétrica contínua sob iluminação solar."
+      },
+      {
+        "id": "c-06",
+        "context": "radiation_monitoring",
+        "text": "Cientistas da NASA no repositório OSDR RadLab diferenciam a energia física da radiação (uGy/h) do efeito biológico real no corpo dos astronautas (uSv/h)."
+      },
+      {
+        "id": "c-07",
+        "context": "solar_storm_shielding",
+        "text": "Segundo o monitoramento NASA DONKI, eventos de Partículas Energéticas Solares (SEP) são a maior ameaça aguda de radiação em viagens fora da magnetosfera terrestre."
+      }
+    ]
+  }

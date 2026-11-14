@@ -1,0 +1,71 @@
+{
+    "configId": "lunar_transit_crew_store_config",
+    "missionContext": "Nave em trânsito para base lunar (4 astronautas)",
+    "crewSize": 4,
+    "scientificBaselines": {
+      "oxygen": {
+        "perPersonPerDay": 0.89,
+        "crewTotalPerDay": 3.56,
+        "unit": "kg/dia",
+        "data_type": "scientific_and_derived",
+        "sourceRef": "REF_NASA_METABOLIC_2023"
+      },
+      "co2Output": {
+        "perPersonPerDay": 1.08,
+        "crewTotalPerDay": 4.32,
+        "unit": "kg/dia",
+        "data_type": "scientific_and_derived",
+        "sourceRef": "REF_NASA_METABOLIC_2023"
+      },
+      "foodSolids": {
+        "perPersonPerDay": 0.62,
+        "crewTotalPerDay": 2.48,
+        "unit": "kg/dia",
+        "data_type": "scientific_and_derived",
+        "sourceRef": "REF_NASA_LSR_2021"
+      },
+      "waterDrinkingBeyondLeo": {
+        "perPersonPerDay": 2.79,
+        "crewTotalPerDay": 11.16,
+        "unit": "kg/dia",
+        "note": "Referência consolidada Beyond LEO (tripulante de 82 kg). Utilizar esta OU a decomposição detalhada abaixo, nunca somar ambas.",
+        "data_type": "scientific_and_derived",
+        "sourceRef": "REF_NASA_METABOLIC_2023"
+      },
+      "waterDetailedBreakdown": {
+        "drinkingPerPerson": 1.62,
+        "foodPrepPerPerson": 0.79,
+        "waterInFoodPerPerson": 1.15,
+        "hygieneAndUtilityPerPerson": 25.72,
+        "totalNominalPerPerson": 29.28,
+        "totalNominalCrew": 117.12,
+        "unit": "kg/dia",
+        "data_type": "scientific_and_derived",
+        "sourceRef": "REF_NASA_LSR_2021"
+      },
+      "waterRecoverySystem": {
+        "baselineEfficiencyPercent": 93.5,
+        "maxDemonstratedEfficiencyPercent": 98.0,
+        "wpaOxygenConsumptionPerKgWater": 0.0034,
+        "unit": "% e kg_O2/kg_agua",
+        "data_type": "scientific",
+        "sourceRef": "REF_NASA_WATER_MILESTONE_2023"
+      }
+    },
+    "gameplayBalancing": {
+      "data_type": "game_parameter",
+      "note": "Parâmetros exclusivos de equilíbrio do motor do jogo (não são medições da NASA). Ajustar conforme a velocidade dos ciclos/dias na simulação.",
+      "realSecondsPerGameDay": 60,
+      "activeWaterModel": "waterDrinkingBeyondLeo",
+      "startingReserves": {
+        "oxygenKg": 120.0,
+        "waterKg": 350.0,
+        "foodKg": 90.0,
+        "energyKwh": 500.0
+      },
+      "criticalThresholdsPercent": {
+        "warning": 30,
+        "danger": 15
+      }
+    }
+  }

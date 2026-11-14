@@ -1,0 +1,137 @@
+{
+    "catalogVersion": "1.0.0",
+    "missionContext": "Módulos da Nave de Trânsito e Base Lunar",
+    "structures": [
+      {
+        "id": "struct-eclss-water-bpa",
+        "name": "Unidade de Recuperação de Salmoura (BPA + UPA/WPA)",
+        "category": "life_support",
+        "environment": "both",
+        "description": "Atualiza o sistema de reciclagem hídrica ECLSS para extrair água da salmoura residual, elevando a recuperação global de 93-94% para até 98%.",
+        "nasaLore": "Baseado no sistema ECLSS da Estação Espacial Internacional, que atingiu o marco de 98% de recuperação de água com a integração do Brine Processor Assembly (BPA).",
+        "scientificEffect": {
+          "metric": "waterRecoveryRatePercent",
+          "value": 98.0,
+          "unit": "%",
+          "data_type": "scientific",
+          "sourceRef": "REF_NASA_WATER_MILESTONE_2023"
+        },
+        "gameCostAndStats": {
+          "data_type": "game_parameter",
+          "buildCost": {
+            "regolith": 40,
+            "energyKwh": 60
+          },
+          "upkeepEnergyKw": 4.5,
+          "buildTimeSeconds": 15,
+          "maxCount": 1
+        }
+      },
+      {
+        "id": "struct-solar-array-wing",
+        "name": "Conjunto de Painéis Solares Fotovoltaicos (SAW)",
+        "category": "power",
+        "environment": "both",
+        "description": "Instala uma asa fotovoltaica adicional inspirada na arquitetura modular da ISS para ampliar a geração contínua de energia.",
+        "nasaLore": "Na ISS, 8 conjuntos principais de painéis solares geram entre 75 kW e 90 kW no total — cerca de 9,38 kW a 11,25 kW por conjunto sob iluminação solar.",
+        "scientificEffect": {
+          "metric": "powerGenerationKw",
+          "value": 10.31,
+          "unit": "kW",
+          "note": "Média derivada por conjunto (82,5 kW totais / 8 conjuntos principais da ISS).",
+          "data_type": "derived",
+          "sourceRef": "REF_NASA_ISS_FACTS"
+        },
+        "gameCostAndStats": {
+          "data_type": "game_parameter",
+          "buildCost": {
+            "regolith": 30,
+            "energyKwh": 25
+          },
+          "upkeepEnergyKw": 0,
+          "buildTimeSeconds": 10,
+          "maxCount": 8
+        }
+      },
+      {
+        "id": "struct-ogs-oxygen-generator",
+        "name": "Sistema de Geração de Oxigênio (OGS)",
+        "category": "life_support",
+        "environment": "both",
+        "description": "Produz oxigênio respirável por eletrólise da água para suprir a demanda metabólica diária dos 4 astronautas.",
+        "nasaLore": "Dimensionado para cobrir o consumo metabólico nominal de 0,89 kg de O2 por astronauta/dia (3,56 kg/dia para 4 tripulantes) documentado pela NASA.",
+        "scientificEffect": {
+          "metric": "oxygenProductionKgPerDay",
+          "value": 3.56,
+          "unit": "kg/dia",
+          "note": "Equivale à demanda metabólica diária da tripulação de 4 astronautas.",
+          "data_type": "derived",
+          "sourceRef": "REF_NASA_METABOLIC_2023"
+        },
+        "gameCostAndStats": {
+          "data_type": "game_parameter",
+          "buildCost": {
+            "regolith": 50,
+            "energyKwh": 80
+          },
+          "upkeepEnergyKw": 6.0,
+          "buildTimeSeconds": 20,
+          "maxCount": 2
+        }
+      },
+      {
+        "id": "struct-regolith-radiation-shield",
+        "name": "Blindagem de Regolito Lunar Anti-Radiação",
+        "category": "protection",
+        "environment": "lunar_base",
+        "description": "Cobertura estrutural feita com regolito lunar compactado para proteger o habitat contra Raios Cósmicos Galácticos (GCR) e tempestades solares (SEP).",
+        "nasaLore": "Fora da magnetosfera da Terra, tempestades solares catalogadas pela NASA DONKI e monitoradas pelo OSDR RadLab exigem barreiras físicas densas para reduzir a dose equivalente (uSv/h).",
+        "scientificEffect": {
+          "metric": "radiationDoseReductionFactor",
+          "value": null,
+          "unit": "%",
+          "note": "Fator exato de atenuação dependente da espessura em g/cm2; valor numérico de jogo definido abaixo em gameCostAndStats.",
+          "data_type": "scientific",
+          "sourceRef": "REF_NASA_OSDR_RADLAB"
+        },
+        "gameCostAndStats": {
+          "data_type": "game_parameter",
+          "radiationMitigationPercent": 65,
+          "buildCost": {
+            "regolith": 100,
+            "energyKwh": 40
+          },
+          "upkeepEnergyKw": 0.5,
+          "buildTimeSeconds": 25,
+          "maxCount": 3
+        }
+      },
+      {
+        "id": "struct-hydroponics-food-bay",
+        "name": "Módulo de Cultivo Hidropônico Compacto",
+        "category": "life_support",
+        "environment": "both",
+        "description": "Suplementa o estoque de alimentos sólidos da tripulação e auxilia na renovação parcial da atmosfera da cabine.",
+        "nasaLore": "Complementa o requisito nominal de 0,62 kg de alimentos sólidos por astronauta/dia (2,48 kg/dia para a tripulação de 4 pessoas).",
+        "scientificEffect": {
+          "metric": "dailyFoodReferenceKg",
+          "value": 2.48,
+          "unit": "kg/dia",
+          "note": "Referência nominal de consumo diário da tripulação que o módulo ajuda a suprir.",
+          "data_type": "derived",
+          "sourceRef": "REF_NASA_LSR_2021"
+        },
+        "gameCostAndStats": {
+          "data_type": "game_parameter",
+          "foodProductionKgPerDay": 1.24,
+          "buildCost": {
+            "regolith": 45,
+            "energyKwh": 50
+          },
+          "upkeepEnergyKw": 5.0,
+          "buildTimeSeconds": 18,
+          "maxCount": 2
+        }
+      }
+    ]
+  }

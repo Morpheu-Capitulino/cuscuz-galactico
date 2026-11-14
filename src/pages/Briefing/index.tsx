@@ -20,7 +20,7 @@ import {
   Rocket,
   Zap,
 } from 'lucide-react';
-
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // ==========================================
@@ -155,9 +155,8 @@ const DICTIONARY = {
     deployBtn: 'HOLD TO AUTHORIZE',
     receiving: 'RECEIVING DATA...',
     skipBtn: 'SKIP',
-    launching: 'INITIATING LUNAR DESCENT',
-    launchSub: 'ROCKET ENGINES IGNITED',
     launching: 'LAUNCHING...',
+    launchSub: 'ROCKET ENGINES IGNITED',
     missionStarted: 'LUNAR MISSION INITIATED',
     preparing: 'PREPARING LUNAR DEPLOYMENT',
 
@@ -205,9 +204,8 @@ const DICTIONARY = {
     deployBtn: 'SEGURE PARA AUTORIZAR',
     receiving: 'RECEBENDO DADOS...',
     skipBtn: 'PULAR',
-    launching: 'INICIANDO DESCIDA LUNAR',
-    launchSub: 'MOTORES DO FOGUETE ACIONADOS',
     launching: 'DECOLANDO...',
+    launchSub: 'MOTORES DO FOGUETE ACIONADOS',
     missionStarted: 'MISSÃO LUNAR INICIADA',
     preparing: 'PREPARANDO DESEMBARQUE LUNAR',
 
@@ -255,9 +253,8 @@ type Lang = 'en' | 'pt';
 // ==========================================
 
 export default function Briefing() {
-  const setScreen = useGameStore((state) => state.setScreen);
-
   const [lang, setLang] = useState<Lang>('pt');
+  const navigate = useNavigate();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [lumiText, setLumiText] = useState('');
   const [isTyping, setIsTyping] = useState(true);
@@ -273,6 +270,14 @@ export default function Briefing() {
   const hasNavigatedRef = useRef(false);
 
   const t = DICTIONARY[lang];
+
+  const irParaBase = () => {
+    navigate('/base-builder');
+  };
+
+  // A L.U.M.I. balança como se estivesse dentro do foguete enquanto a autorização é segurada.
+  // A animação continua durante a cena de decolagem.
+  const isLumiShaking = isPressing || isLaunching;
 
   // L.U.M.I. transmite a mensagem caractere por caractere.
   useEffect(() => {
@@ -363,7 +368,7 @@ export default function Briefing() {
     launchTimeoutRef.current = setTimeout(() => {
       if (hasNavigatedRef.current) return;
       hasNavigatedRef.current = true;
-      setScreen('exploration');
+      navigate('/exploration'); // AQUI: Substitua o setScreen por navigate
     }, 3600);
 
     return () => {
@@ -372,7 +377,7 @@ export default function Briefing() {
         launchTimeoutRef.current = null;
       }
     };
-  }, [isLaunching, setScreen]);
+  }, [isLaunching, navigate]); // AQUI: Atualize o array de dependências
 
   // Limpa os temporizadores quando o briefing é desmontado.
   useEffect(() => {
@@ -528,16 +533,37 @@ export default function Briefing() {
             <div className="flex items-end gap-8 ml-4">
 
               <motion.div
-                animate={{
-                  y: [0, -18, 0],
-                  rotate: [-3, 3, -3],
-                  scale: [1, 1.04, 1],
-                }}
-                transition={{
-                  duration: 3.5,
-                  repeat: Infinity,
-                  ease: 'easeInOut',
-                }}
+                animate={
+                  isLumiShaking
+                    ? {
+                        // Balanço mais intenso e rápido, simulando a vibração do foguete.
+                        x: [0, -12, 12, -14, 14, -7, 0],
+                        y: [0, -2, 2, -3, 3, 0],
+                        rotate: [0, -8, 8, -10, 10, -5, 0],
+                        scale: [1, 1.025, 0.99, 1.025, 0.99, 1],
+                      }
+                    : {
+                        // Flutuação tranquila enquanto a missão ainda está em espera.
+                        x: 0,
+                        y: [0, -18, 0],
+                        rotate: [-3, 3, -3],
+                        scale: [1, 1.04, 1],
+                      }
+                }
+                transition={
+                  isLumiShaking
+                    ? {
+                        duration: 0.22,
+                        repeat: Infinity,
+                        ease: 'linear',
+                      }
+                    : {
+                        duration: 3.5,
+                        repeat: Infinity,
+                        ease: 'easeInOut',
+                      }
+                }
+                style={{ transformOrigin: 'center bottom' }}
                 className="w-36 h-36 md:w-44 md:h-44 relative"
               >
                 <div className="absolute inset-0 rounded-full bg-cyan-400/20 blur-3xl animate-pulse" />
@@ -553,8 +579,15 @@ export default function Briefing() {
                   />
 
                   <motion.div
-                    animate={{ opacity: [0.3, 1, 0.3] }}
-                    transition={{ duration: 2, repeat: Infinity }}
+                    animate={{
+                      opacity: isLumiShaking ? [0.35, 1, 0.45, 1] : [0.3, 1, 0.3],
+                      scaleX: isLumiShaking ? [0.8, 1.25, 0.9, 1.2] : [1, 1, 1],
+                    }}
+                    transition={{
+                      duration: isLumiShaking ? 0.3 : 2,
+                      repeat: Infinity,
+                      ease: 'easeInOut',
+                    }}
                     className="absolute bottom-4 w-8 h-1 rounded-full bg-cyan-400 shadow-[0_0_15px_#22d3ee]"
                   />
                 </div>
