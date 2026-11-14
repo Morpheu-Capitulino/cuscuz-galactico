@@ -2,6 +2,9 @@
 export type Screen = 'landing' | 'briefing' | 'exploration' | 'base-builder' | 'report';
 export type MissionStatus = 'playing' | 'victory' | 'defeat';
 
+language: 'en' | 'pt';
+setLanguage: (lang: 'en' | 'pt') => void;
+
 export interface Resources {
   regolith: number;
   ice: number;

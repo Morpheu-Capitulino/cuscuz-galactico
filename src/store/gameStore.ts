@@ -1,9 +1,8 @@
 import { create } from 'zustand';
-// Certifique-se de que a função calculateEventImpact existe no eventManager.ts
-import { calculateEventImpact } from '../engine/events/eventManager';
 
 export type Screen = 'landing' | 'briefing' | 'exploration' | 'base-builder' | 'report';
 export type MissionStatus = 'playing' | 'victory' | 'defeat';
+
 
 // Módulo 03: Recursos extraídos fisicamente do mapa
 export interface Inventory {
@@ -65,7 +64,12 @@ export const useGameStore = create<GameState>((set, get) => ({
   buildStructure: (structureId, cost) => {
     const state = get();
     
-    // Validação rígida: o construtor falha se faltar qualquer recurso exigido
+    // Trava para impedir prédios duplicados
+    if (state.builtStructures.includes(structureId)) {
+      return false;
+    }
+
+    // Validação rígida: falha se faltar qualquer recurso exigido
     for (const [key, value] of Object.entries(cost)) {
       const resourceKey = key as keyof Inventory;
       if (state.inventory[resourceKey] < (value as number)) {
@@ -91,63 +95,10 @@ export const useGameStore = create<GameState>((set, get) => ({
   })),
 
   processTurn: () => {
-    const state = get();
-    
-    // Busca os multiplicadores de dano dos eventos ativos
-    const impact = calculateEventImpact(state.activeEvents);
-
-    // Consumo base diário estipulado para a tripulação com peso dos eventos
-    const baseCosts = {
-      energy: 20 * (impact.energy || 1),
-      water: 15 * (impact.water || 1),
-      oxygen: 20, 
-      food: 10  
-    };
-
-    set((state) => {
-      // 1. Processamento de Energia
-      let newSolarPower = state.inventory.solarPower - baseCosts.energy;
-      let newEnergyIndicator = state.indicators.energy;
-      if (newSolarPower < 0) {
-        newEnergyIndicator = Math.max(0, state.indicators.energy + newSolarPower);
-        newSolarPower = 0;
-      }
-
-      // 2. Processamento de Água (Gelo derretido absorve o impacto antes do reservatório da base)
-      let newIce = state.inventory.ice - baseCosts.water;
-      let newWaterIndicator = state.indicators.water;
-      if (newIce < 0) {
-        newWaterIndicator = Math.max(0, state.indicators.water + newIce);
-        newIce = 0;
-      }
-
-      // 3. Processamento de Oxigênio e Comida (Consumo direto na base)
-      const newOxygenIndicator = Math.max(0, state.indicators.oxygen - baseCosts.oxygen);
-      const newFoodIndicator = Math.max(0, state.indicators.food - baseCosts.food);
-
-      // Verificação de falha crítica estrutural
-      const isDefeat = newEnergyIndicator === 0 || newWaterIndicator === 0 || newOxygenIndicator === 0 || newFoodIndicator === 0;
-      
-      const nextDay = state.day + 1;
-      const isVictory = nextDay > 7 && !isDefeat; // Vitória só conta ao sobreviver o 7º dia completo
-
-      return {
-        day: nextDay,
-        inventory: {
-          ...state.inventory,
-          solarPower: newSolarPower,
-          ice: newIce
-        },
-        indicators: {
-          ...state.indicators,
-          energy: newEnergyIndicator,
-          water: newWaterIndicator,
-          oxygen: newOxygenIndicator,
-          food: newFoodIndicator
-        },
-        activeEvents: [], 
-        missionStatus: isDefeat ? 'defeat' : (isVictory ? 'victory' : state.missionStatus)
-      };
-    });
+    // A lógica matemática diária e integração com eventos/produção 
+    // será conectada aqui assim que os módulos da engine estiverem importados.
+    set((state) => ({
+      day: state.day + 1
+    }));
   }
 }));

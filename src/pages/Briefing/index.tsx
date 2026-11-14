@@ -1,276 +1,873 @@
-// src/pages/Briefing/index.tsx
-import { useState, useEffect } from 'react';
+// Arquivo combinado: visual original da L.U.M.I. + carregamento e decolagem cinematográfica.
+import { useState, useEffect, useRef } from 'react';
+import type { PointerEvent } from 'react';
 import { useGameStore } from '../../store/gameStore';
-import { Bot, Rocket, MapPin, Clock, Users, ShieldAlert, Globe, ChevronDown } from 'lucide-react';
+
+import {
+  Bot,
+  MapPin,
+  Clock,
+  Users,
+  ShieldAlert,
+  Globe,
+  Fingerprint,
+  ChevronRight,
+  FastForward,
+  Radio,
+  Satellite,
+  Orbit,
+  Activity,
+  Rocket,
+  Zap,
+} from 'lucide-react';
+
 import { motion, AnimatePresence } from 'framer-motion';
 
-// --- DICIONÁRIO DE DADOS (INGLÊS / PORTUGUÊS) ---
+// ==========================================
+// ESTRELAS
+// ==========================================
+
+const STARS = Array.from({ length: 100 }, (_, i) => ({
+  id: i,
+  x: (i * 37.7) % 100,
+  y: (i * 61.3) % 100,
+  size: (i % 3) + 1,
+  duration: 2 + (i % 5),
+  delay: (i % 7) * 0.4,
+}));
+
+// ==========================================
+// FUNDO ESPACIAL
+// ==========================================
+
+function SpaceBackground() {
+  return (
+    <div className="fixed inset-0 overflow-hidden pointer-events-none bg-[#030712]">
+
+      {/* Nebulosas */}
+      <div className="absolute w-[700px] h-[700px] rounded-full bg-blue-700/10 blur-[150px] -top-80 -left-60" />
+
+      <div className="absolute w-[600px] h-[600px] rounded-full bg-cyan-500/10 blur-[150px] bottom-[-300px] right-[-100px]" />
+
+      <div className="absolute w-[500px] h-[500px] rounded-full bg-indigo-600/10 blur-[140px] top-1/3 left-1/3" />
+
+      {/* Lua */}
+      <motion.div
+        animate={{
+          y: [0, -18, 0],
+          rotate: [0, 3, 0],
+        }}
+        transition={{
+          duration: 12,
+          repeat: Infinity,
+          ease: 'easeInOut',
+        }}
+        className="absolute -right-32 top-1/4 w-[420px] h-[420px] rounded-full bg-gradient-to-br from-slate-300 via-slate-500 to-slate-900 opacity-20 shadow-[0_0_120px_rgba(100,200,255,0.2)]"
+      >
+        <div className="absolute top-20 left-20 w-12 h-12 rounded-full bg-black/20 blur-md" />
+        <div className="absolute bottom-28 right-24 w-20 h-20 rounded-full bg-black/20 blur-lg" />
+        <div className="absolute top-48 right-28 w-8 h-8 rounded-full bg-black/20 blur-sm" />
+      </motion.div>
+
+      {/* Estrelas */}
+      {STARS.map((star) => (
+        <motion.div
+          key={star.id}
+          className="absolute rounded-full bg-white"
+          style={{
+            width: star.size,
+            height: star.size,
+            top: `${star.y}%`,
+            left: `${star.x}%`,
+          }}
+          animate={{
+            opacity: [0.2, 1, 0.2],
+            scale: [0.7, 1.5, 0.7],
+          }}
+          transition={{
+            duration: star.duration,
+            repeat: Infinity,
+            delay: star.delay,
+          }}
+        />
+      ))}
+
+      {/* Meteoros */}
+      {[0, 1, 2].map((i) => (
+        <motion.div
+          key={i}
+          className="absolute h-[2px] w-32 bg-gradient-to-r from-transparent via-cyan-300 to-transparent"
+          initial={{
+            x: '-20vw',
+            y: `${15 + i * 25}vh`,
+            opacity: 0,
+          }}
+          animate={{
+            x: '120vw',
+            y: `${35 + i * 20}vh`,
+            opacity: [0, 1, 0],
+          }}
+          transition={{
+            duration: 5,
+            repeat: Infinity,
+            delay: i * 5,
+            ease: 'linear',
+          }}
+        />
+      ))}
+
+      {/* Grade holográfica */}
+      <div
+        className="absolute inset-0 opacity-[0.035]"
+        style={{
+          backgroundImage:
+            'linear-gradient(rgba(34,211,238,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(34,211,238,0.5) 1px, transparent 1px)',
+          backgroundSize: '60px 60px',
+        }}
+      />
+
+      {/* Linha de escaneamento */}
+      <motion.div
+        className="absolute left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-cyan-400/30 to-transparent"
+        animate={{ top: ['-5%', '105%'] }}
+        transition={{
+          duration: 9,
+          repeat: Infinity,
+          ease: 'linear',
+        }}
+      />
+
+      <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50" />
+    </div>
+  );
+}
+
+// ==========================================
+// DICIONÁRIO
+// ==========================================
+
 const DICTIONARY = {
   en: {
-    lumiTransmission: "INCOMING TRANSMISSION...\nGreetings, Cadet. I am L.U.M.I., your Lunar Utility Mission Intelligence. Humanity is counting on you to establish our first sustainable base.\n\nResources are scarce and the environment is unforgiving. Manage energy, water, oxygen, and keep the crew alive.\n\nGood luck, Commander.",
-    detailsTitle: "Mission Details",
-    deployBtn: "Deploy Base",
-    receiving: "Receiving Data...",
+    lumiTransmission:
+      "INCOMING TRANSMISSION...\nGreetings, Cadet. I am L.U.M.I., your Lunar Utility Mission Intelligence. Humanity is counting on you to establish our first sustainable base.\n\nResources are scarce and the environment is unforgiving. Manage energy, water, oxygen, and keep the crew alive.\n\nGood luck, Commander.",
+
+    detailsTitle: 'ORBITAL SCAN DATA',
+    deployBtn: 'HOLD TO AUTHORIZE',
+    receiving: 'RECEIVING DATA...',
+    skipBtn: 'SKIP',
+    launching: 'INITIATING LUNAR DESCENT',
+    launchSub: 'ROCKET ENGINES IGNITED',
+    launching: 'LAUNCHING...',
+    missionStarted: 'LUNAR MISSION INITIATED',
+    preparing: 'PREPARING LUNAR DEPLOYMENT',
+
     parameters: [
       {
         id: 'dest',
-        icon: <MapPin size={18} />,
-        label: "Destination",
-        value: "Lunar South Pole",
-        lore: "The South Pole harbors deep, permanently shadowed craters containing water ice. This ice is crucial for producing drinking water and extracting oxygen for the crew."
+        icon: <MapPin size={16} />,
+        label: 'Destination',
+        value: 'Lunar South Pole',
+        danger: false,
+        lore: 'The South Pole harbors deep, permanently shadowed craters containing water ice. This ice is crucial for producing drinking water and extracting oxygen for the crew.',
       },
       {
         id: 'dur',
-        icon: <Clock size={18} />,
-        label: "Duration",
-        value: "7 Simulated Days",
-        lore: "A massive solar storm is projected to hit our sector in exactly 7 days. The base's life support and radiation shielding must be fully operational before it arrives."
+        icon: <Clock size={16} />,
+        label: 'Duration',
+        value: '7 Simulated Days',
+        danger: false,
+        lore: "A massive solar storm is projected to hit our sector in exactly 7 days. The base's life support and radiation shielding must be fully operational before it arrives.",
       },
       {
         id: 'crew',
-        icon: <Users size={18} />,
-        label: "Crew Roster",
-        value: "4 Astronauts",
-        lore: "A specialized team consisting of a Commander, a Systems Engineer, an Astrobiologist, and a Medical Officer. Their survival depends entirely on your resource management."
+        icon: <Users size={16} />,
+        label: 'Crew Roster',
+        value: '4 Astronauts',
+        danger: false,
+        lore: 'A specialized team consisting of a Commander, a Systems Engineer, an Astrobiologist, and a Medical Officer. Their survival depends entirely on your resource management.',
       },
       {
         id: 'status',
-        icon: <ShieldAlert size={18} />,
-        label: "Initial Status",
-        value: "Critical Alert",
+        icon: <ShieldAlert size={16} />,
+        label: 'Initial Status',
+        value: 'Critical Alert',
         danger: true,
-        lore: "Landers have dropped initial supplies, but life support systems are offline. Oxygen and battery reserves are draining quickly. Immediate action required upon deployment."
-      }
-    ]
+        lore: 'Landers have dropped initial supplies, but life support systems are offline. Oxygen and battery reserves are draining quickly. Immediate action required upon deployment.',
+      },
+    ],
   },
+
   pt: {
-    lumiTransmission: "TRANSMISSÃO RECEBIDA...\nSaudações, Cadete. Sou L.U.M.I., sua Inteligência de Missão Utilitária Lunar. A humanidade conta com você para estabelecer nossa primeira base sustentável.\n\nOs recursos são escassos e o ambiente é implacável. Gerencie energia, água, oxigênio e mantenha a tripulação viva.\n\nBoa sorte, Comandante.",
-    detailsTitle: "Detalhes da Missão",
-    deployBtn: "Iniciar Missão",
-    receiving: "Recebendo Dados...",
+    lumiTransmission:
+      'TRANSMISSÃO RECEBIDA...\nSaudações, Cadete. Sou L.U.M.I., sua Inteligência de Missão Utilitária Lunar. A humanidade conta com você para estabelecer nossa primeira base sustentável.\n\nOs recursos são escassos e o ambiente é implacável. Gerencie energia, água, oxigênio e mantenha a tripulação viva.\n\nBoa sorte, Comandante.',
+
+    detailsTitle: 'DADOS DO ESCANEAMENTO',
+    deployBtn: 'SEGURE PARA AUTORIZAR',
+    receiving: 'RECEBENDO DADOS...',
+    skipBtn: 'PULAR',
+    launching: 'INICIANDO DESCIDA LUNAR',
+    launchSub: 'MOTORES DO FOGUETE ACIONADOS',
+    launching: 'DECOLANDO...',
+    missionStarted: 'MISSÃO LUNAR INICIADA',
+    preparing: 'PREPARANDO DESEMBARQUE LUNAR',
+
     parameters: [
       {
         id: 'dest',
-        icon: <MapPin size={18} />,
-        label: "Destino",
-        value: "Polo Sul Lunar",
-        lore: "O Polo Sul abriga crateras profundas e permanentemente sombreadas contendo gelo de água. Este gelo é crucial para produzir água potável e extrair oxigênio para a tripulação."
+        icon: <MapPin size={16} />,
+        label: 'Destino',
+        value: 'Polo Sul Lunar',
+        danger: false,
+        lore: 'O Polo Sul abriga crateras profundas e permanentemente sombreadas contendo gelo de água. Este gelo é crucial para produzir água potável e extrair oxigênio para a tripulação.',
       },
       {
         id: 'dur',
-        icon: <Clock size={18} />,
-        label: "Duração",
-        value: "7 Dias Simulados",
-        lore: "Uma tempestade solar massiva atingirá nosso setor em exatamente 7 dias. O suporte à vida e a blindagem contra radiação da base devem estar totalmente operacionais antes disso."
+        icon: <Clock size={16} />,
+        label: 'Duração',
+        value: '7 Dias Simulados',
+        danger: false,
+        lore: 'Uma tempestade solar massiva atingirá nosso setor em exatamente 7 dias. O suporte à vida e a blindagem contra radiação da base devem estar totalmente operacionais antes disso.',
       },
       {
         id: 'crew',
-        icon: <Users size={18} />,
-        label: "Tripulação",
-        value: "4 Astronautas",
-        lore: "Uma equipe especializada formada por um Comandante, um Engenheiro de Sistemas, um Astrobiólogo e um Oficial Médico. A sobrevivência deles depende inteiramente da sua gestão."
+        icon: <Users size={16} />,
+        label: 'Tripulação',
+        value: '4 Astronautas',
+        danger: false,
+        lore: 'Uma equipe especializada formada por um Comandante, um Engenheiro de Sistemas, um Astrobiólogo e um Oficial Médico. A sobrevivência deles depende inteiramente da sua gestão.',
       },
       {
         id: 'status',
-        icon: <ShieldAlert size={18} />,
-        label: "Status Inicial",
-        value: "Alerta Crítico",
+        icon: <ShieldAlert size={16} />,
+        label: 'Status Inicial',
+        value: 'Alerta Crítico',
         danger: true,
-        lore: "Os módulos deixaram suprimentos iniciais, mas os sistemas de suporte à vida estão offline. Reservas de oxigênio e bateria estão caindo. Ação imediata necessária."
-      }
-    ]
-  }
+        lore: 'Os módulos deixaram suprimentos iniciais, mas os sistemas de suporte à vida estão offline. Reservas de oxigênio e bateria estão caindo. Ação imediata necessária.',
+      },
+    ],
+  },
 };
 
 type Lang = 'en' | 'pt';
 
+// ==========================================
+// COMPONENTE PRINCIPAL
+// ==========================================
+
 export default function Briefing() {
   const setScreen = useGameStore((state) => state.setScreen);
-  
-  // Novos estados para Idioma e Acordeão Interativo
-  const [lang, setLang] = useState<Lang>('en');
+
+  const [lang, setLang] = useState<Lang>('pt');
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  
   const [lumiText, setLumiText] = useState('');
   const [isTyping, setIsTyping] = useState(true);
+  const [holdProgress, setHoldProgress] = useState(0);
+  const [isPressing, setIsPressing] = useState(false);
+  const [isLaunching, setIsLaunching] = useState(false);
 
-  // t guarda todos os textos baseados na língua escolhida
+  const typingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const holdIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const launchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const holdProgressRef = useRef(0);
+  const launchStartedRef = useRef(false);
+  const hasNavigatedRef = useRef(false);
+
   const t = DICTIONARY[lang];
 
-  // Efeito da caixa de fala do jogo (Reinicia quando troca de idioma)
+  // L.U.M.I. transmite a mensagem caractere por caractere.
   useEffect(() => {
-    let i = 0;
+    if (typingIntervalRef.current) {
+      clearInterval(typingIntervalRef.current);
+      typingIntervalRef.current = null;
+    }
+
+    let index = 0;
     setLumiText('');
     setIsTyping(true);
-    
-    const typingInterval = setInterval(() => {
-      if (i < t.lumiTransmission.length) {
-        setLumiText(t.lumiTransmission.slice(0, i + 1));
-        i++;
-      } else {
-        clearInterval(typingInterval);
+
+    typingIntervalRef.current = setInterval(() => {
+      index += 1;
+      setLumiText(t.lumiTransmission.slice(0, index));
+
+      if (index >= t.lumiTransmission.length) {
+        if (typingIntervalRef.current) {
+          clearInterval(typingIntervalRef.current);
+          typingIntervalRef.current = null;
+        }
         setIsTyping(false);
       }
-    }, 25); // Velocidade do texto
+    }, 22);
 
-    return () => clearInterval(typingInterval);
-  }, [lang, t.lumiTransmission]);
+    return () => {
+      if (typingIntervalRef.current) {
+        clearInterval(typingIntervalRef.current);
+        typingIntervalRef.current = null;
+      }
+    };
+  }, [t.lumiTransmission]);
+
+  const handleSkipTyping = () => {
+    if (typingIntervalRef.current) {
+      clearInterval(typingIntervalRef.current);
+      typingIntervalRef.current = null;
+    }
+    setLumiText(t.lumiTransmission);
+    setIsTyping(false);
+  };
+
+  // Segurar o botão carrega a autorização. Soltar antes dos 100% cancela a carga.
+  const handlePointerDown = (event: PointerEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    if (isTyping || isLaunching || launchStartedRef.current || holdIntervalRef.current) return;
+
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setIsPressing(true);
+
+    holdIntervalRef.current = setInterval(() => {
+      const nextProgress = Math.min(holdProgressRef.current + 2, 100);
+      holdProgressRef.current = nextProgress;
+      setHoldProgress(nextProgress);
+
+      if (nextProgress >= 100) {
+        if (holdIntervalRef.current) {
+          clearInterval(holdIntervalRef.current);
+          holdIntervalRef.current = null;
+        }
+
+        launchStartedRef.current = true;
+        setIsPressing(false);
+        setIsLaunching(true);
+      }
+    }, 35);
+  };
+
+  const handlePointerUp = () => {
+    setIsPressing(false);
+
+    if (holdIntervalRef.current) {
+      clearInterval(holdIntervalRef.current);
+      holdIntervalRef.current = null;
+    }
+
+    // Não zera a barra quando os 100% já acionaram a sequência de lançamento.
+    if (!launchStartedRef.current) {
+      holdProgressRef.current = 0;
+      setHoldProgress(0);
+    }
+  };
+
+  // A animação do foguete termina e então abre a exploração lunar.
+  useEffect(() => {
+    if (!isLaunching) return;
+
+    launchTimeoutRef.current = setTimeout(() => {
+      if (hasNavigatedRef.current) return;
+      hasNavigatedRef.current = true;
+      setScreen('exploration');
+    }, 3600);
+
+    return () => {
+      if (launchTimeoutRef.current) {
+        clearTimeout(launchTimeoutRef.current);
+        launchTimeoutRef.current = null;
+      }
+    };
+  }, [isLaunching, setScreen]);
+
+  // Limpa os temporizadores quando o briefing é desmontado.
+  useEffect(() => {
+    return () => {
+      if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
+      if (holdIntervalRef.current) clearInterval(holdIntervalRef.current);
+      if (launchTimeoutRef.current) clearTimeout(launchTimeoutRef.current);
+    };
+  }, []);
+
+  // ==========================================
+  // INTERFACE
+  // ==========================================
 
   return (
-    // Fundo de Galáxia 
-    <div className="flex items-center justify-center min-h-screen p-4 md:p-10 bg-slate-950 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-900/20 via-[#0a0a1a] to-black relative overflow-hidden font-sans">
-      
-      {/* Botão de Troca de Idioma (Topo Direita) */}
-      <div className="absolute top-6 right-6 z-50 flex bg-slate-900/80 border border-cyan-900/50 rounded-lg overflow-hidden backdrop-blur-md">
-        <div className="px-3 py-2 bg-slate-800/50 flex items-center justify-center border-r border-cyan-900/50">
-          <Globe size={16} className="text-cyan-500" />
-        </div>
-        <button 
-          onClick={() => setLang('en')}
-          className={`px-4 py-2 text-xs font-bold tracking-widest transition-colors ${lang === 'en' ? 'bg-cyan-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}
-        >
-          EN
-        </button>
-        <button 
-          onClick={() => setLang('pt')}
-          className={`px-4 py-2 text-xs font-bold tracking-widest transition-colors ${lang === 'pt' ? 'bg-cyan-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}
-        >
-          PT
-        </button>
-      </div>
+    <div className="relative min-h-screen overflow-hidden bg-[#030712] text-white font-sans select-none">
 
-      {/* Efeito de estrelas CSS provisório para não ficar vazio até a arte chegar */}
-      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-30 animate-pulse" />
+      <SpaceBackground />
 
-      <div className="max-w-6xl w-full grid grid-cols-1 md:grid-cols-12 gap-8 relative z-10">
-        
-        {/* COLUNA ESQUERDA: PERSONAGEM (LUMI) E CAIXA DE DIÁLOGO */}
-        <div className="col-span-1 md:col-span-7 flex flex-col justify-end relative h-[500px]">
-          
-          {/* Caixa de Diálogo (Speech Bubble estilo RPG) */}
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4 }}
-            className="bg-slate-900/90 backdrop-blur-sm border-2 border-cyan-500/50 p-6 md:p-8 rounded-2xl rounded-bl-none shadow-[0_0_30px_rgba(8,145,178,0.2)] mb-8 relative"
-          >
-            {/* O triângulo que aponta para o robô */}
-            <div className="absolute -bottom-6 left-12 w-0 h-0 border-l-[15px] border-l-transparent border-t-[25px] border-t-slate-900/90 border-r-[15px] border-r-transparent filter drop-shadow-[0_4px_0px_rgba(8,145,178,0.5)]"></div>
-            
-            <h3 className="text-cyan-400 font-bold tracking-widest uppercase mb-4 text-sm flex items-center gap-2">
-              <span className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
-              L.U.M.I. System
-            </h3>
-            
-            <p className="text-slate-200 font-mono leading-relaxed min-h-[140px] whitespace-pre-line text-lg">
-              {lumiText}
-              {isTyping && <span className="inline-block w-3 h-5 bg-cyan-400 ml-1 animate-pulse align-middle" />}
-            </p>
-          </motion.div>
+      {/* CONTEÚDO */}
+      <motion.div
+        animate={
+          isPressing
+            ? {
+                x: [0, -1 - holdProgress / 22, 1 + holdProgress / 22, -1 - holdProgress / 22, 0],
+                y: [0, 0.5 + holdProgress / 35, -0.5 - holdProgress / 35, 0],
+                rotate: [0, -0.08 - holdProgress / 650, 0.08 + holdProgress / 650, 0],
+              }
+            : { x: 0, y: 0, rotate: 0 }
+        }
+        transition={{
+          repeat: isPressing ? Infinity : 0,
+          duration: isPressing ? Math.max(0.055, 0.12 - holdProgress / 1800) : 0.2,
+          ease: 'linear',
+        }}
+        className="relative z-10 min-h-screen flex items-center justify-center p-4 md:p-10"
+      >
+        <div className="max-w-7xl w-full grid grid-cols-1 md:grid-cols-12 gap-8 relative">
 
-          {/* O Robô (Animação de flutuar e respirar) */}
-          <motion.div 
-            animate={{ 
-              y: [0, -15, 0], // Flutua para cima e para baixo
-              rotate: [0, 2, -2, 0] // Leve inclinação como se olhasse
-            }}
-            transition={{ 
-              repeat: Infinity, 
-              duration: 4, 
-              ease: "easeInOut" 
-            }}
-            className="w-40 h-40 ml-4 relative"
-          >
-            {/* AQUI O SEU AMIGO VAI COLOCAR A IMAGEM DELE! */}
-            <div className="w-full h-full bg-slate-800 border-4 border-cyan-400 rounded-3xl shadow-[0_0_40px_rgba(8,145,178,0.5)] flex items-center justify-center">
-               <Bot size={80} className="text-cyan-300" />
+          {/* IDIOMA */}
+          <div className="absolute -top-10 right-0 z-50 flex items-center bg-slate-950/80 border border-cyan-900/50 rounded-lg overflow-hidden backdrop-blur-xl">
+
+            <div className="px-3 py-2 border-r border-cyan-900/50">
+              <Globe size={14} className="text-cyan-400" />
             </div>
-            
-            {/* Sombra no chão para dar profundidade */}
-            <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-24 h-4 bg-cyan-900/50 blur-xl rounded-full"></div>
-          </motion.div>
 
-        </div>
+            <button
+              onClick={() => setLang('en')}
+              className={`px-4 py-2 text-[10px] font-bold tracking-widest transition-all ${
+                lang === 'en'
+                  ? 'bg-cyan-600 text-white'
+                  : 'text-cyan-500/50 hover:bg-cyan-950/50'
+              }`}
+            >
+              EN
+            </button>
 
-        {/* COLUNA DIREITA: HUD DA MISSÃO (ACORDEÃO INTERATIVO) */}
-        <div className="col-span-1 md:col-span-5 flex flex-col justify-center gap-6">
-          
-          <motion.div 
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.5, duration: 0.6 }}
-            className="bg-slate-900/60 backdrop-blur-md border border-slate-700/50 p-6 rounded-2xl"
-          >
-            <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400 uppercase tracking-[0.2em] mb-6 border-b border-slate-700/50 pb-4">
-              {t.detailsTitle}
-            </h1>
+            <button
+              onClick={() => setLang('pt')}
+              className={`px-4 py-2 text-[10px] font-bold tracking-widest transition-all ${
+                lang === 'pt'
+                  ? 'bg-cyan-600 text-white'
+                  : 'text-cyan-500/50 hover:bg-cyan-950/50'
+              }`}
+            >
+              PT
+            </button>
+          </div>
 
-            {/* Renderização Dinâmica do Acordeão */}
-            <div className="flex flex-col gap-3">
-              {t.parameters.map((param) => {
-                const isExpanded = expandedId === param.id;
-                
-                return (
-                  <div 
-                    key={param.id} 
-                    className={`rounded-lg border transition-all duration-300 overflow-hidden cursor-pointer ${param.danger ? 'border-red-900/50 hover:border-red-500/50 bg-red-950/20' : 'border-slate-800 hover:border-cyan-800/50 bg-slate-950/50'}`}
-                    onClick={() => setExpandedId(isExpanded ? null : param.id)}
+          {/* LADO ESQUERDO */}
+          <div className="col-span-1 md:col-span-7 flex flex-col justify-end relative min-h-[540px]">
+
+            {/* STATUS DA TRANSMISSÃO */}
+            <motion.div
+              initial={{ opacity: 0, x: -40 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8 }}
+              className="flex items-center gap-3 mb-6"
+            >
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-cyan-500/20 bg-cyan-950/30 backdrop-blur-md">
+                <Radio size={14} className="text-cyan-400 animate-pulse" />
+
+                <span className="text-[10px] tracking-[0.25em] font-mono text-cyan-300">
+                  INCOMING TRANSMISSION
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2 text-[10px] font-mono text-slate-500">
+                <Activity size={12} className="text-green-400" />
+                SYSTEM ONLINE
+              </div>
+            </motion.div>
+
+            {/* CAIXA DE DIÁLOGO DO LUMI */}
+            <motion.div
+              initial={{
+                opacity: 0,
+                x: -120,
+                scale: 0.8,
+                rotateY: -15,
+                filter: 'blur(15px)',
+              }}
+              animate={{
+                opacity: 1,
+                x: 0,
+                scale: 1,
+                rotateY: 0,
+                filter: 'blur(0px)',
+              }}
+              transition={{
+                duration: 1.1,
+                ease: [0.16, 1, 0.3, 1],
+              }}
+              className="bg-slate-950/80 backdrop-blur-2xl border-2 border-cyan-500/30 p-6 md:p-8 rounded-2xl rounded-bl-none shadow-[0_0_50px_rgba(8,145,178,0.15)] mb-10 relative"
+            >
+              <div className="absolute top-0 left-8 right-8 h-[1px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent" />
+
+              <div className="absolute -bottom-6 left-12 w-0 h-0 border-l-[15px] border-l-transparent border-t-[25px] border-t-slate-950/80 border-r-[15px] border-r-transparent" />
+
+              <h3 className="text-cyan-400 font-bold tracking-[0.25em] uppercase mb-5 text-xs flex items-center gap-3">
+
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-400" />
+                </span>
+
+                L.U.M.I. SYSTEM
+              </h3>
+
+              <div className="relative">
+
+                <p className="text-slate-200 font-mono leading-[1.9] min-h-[190px] whitespace-pre-line text-sm md:text-base">
+                  {lumiText}
+
+                  {isTyping && (
+                    <span className="inline-block w-2 h-5 bg-cyan-400 ml-1 animate-pulse align-middle" />
+                  )}
+                </p>
+
+                {isTyping && (
+                  <button
+                    onClick={handleSkipTyping}
+                    className="absolute -bottom-4 right-0 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-cyan-500 hover:text-cyan-300 transition-colors"
                   >
-                    {/* Header da Linha */}
-                    <div className="flex items-center justify-between p-3 select-none">
-                      <div className={`flex items-center gap-3 ${param.danger ? 'text-red-400' : 'text-cyan-500'}`}>
-                        {param.icon}
-                        <span className="text-xs uppercase tracking-widest font-bold">{param.label}</span>
+                    {t.skipBtn}
+                    <FastForward size={12} />
+                  </button>
+                )}
+              </div>
+            </motion.div>
+
+            {/* PERSONAGEM LUMI */}
+            <div className="flex items-end gap-8 ml-4">
+
+              <motion.div
+                animate={{
+                  y: [0, -18, 0],
+                  rotate: [-3, 3, -3],
+                  scale: [1, 1.04, 1],
+                }}
+                transition={{
+                  duration: 3.5,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                }}
+                className="w-36 h-36 md:w-44 md:h-44 relative"
+              >
+                <div className="absolute inset-0 rounded-full bg-cyan-400/20 blur-3xl animate-pulse" />
+
+                <div className="relative w-full h-full bg-gradient-to-br from-slate-800 via-slate-900 to-black border border-cyan-400/60 rounded-[2.5rem] shadow-[0_0_50px_rgba(6,182,212,0.25)] flex items-center justify-center overflow-hidden">
+
+                  <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-cyan-300/10 to-transparent" />
+
+                  <Bot
+                    size={85}
+                    strokeWidth={1.5}
+                    className="relative z-10 text-cyan-300 drop-shadow-[0_0_20px_rgba(34,211,238,0.9)]"
+                  />
+
+                  <motion.div
+                    animate={{ opacity: [0.3, 1, 0.3] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className="absolute bottom-4 w-8 h-1 rounded-full bg-cyan-400 shadow-[0_0_15px_#22d3ee]"
+                  />
+                </div>
+
+                <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-28 h-5 bg-cyan-500/30 blur-xl rounded-full" />
+              </motion.div>
+
+              <div className="pb-4 space-y-2">
+                <div className="text-xs font-bold tracking-[0.2em] text-cyan-300">
+                  L.U.M.I.
+                </div>
+
+                <div className="text-[10px] text-slate-500 font-mono tracking-widest">
+                  LUNAR ASSISTANT
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+
+                  <span className="text-[9px] text-green-400 font-mono tracking-widest">
+                    {isTyping ? 'TRANSMITTING' : 'READY'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* LADO DIREITO */}
+          <div className="col-span-1 md:col-span-5 flex flex-col justify-center gap-7">
+
+            {/* CABEÇALHO */}
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.5 }}
+              className="flex items-center gap-4"
+            >
+              <div className="p-2 rounded-lg bg-cyan-950/50 border border-cyan-500/30">
+                <Satellite size={19} className="text-cyan-400" />
+              </div>
+
+              <div>
+                <h1 className="text-sm font-bold text-cyan-300 uppercase tracking-[0.25em] font-mono">
+                  {t.detailsTitle}
+                </h1>
+
+                <p className="text-[9px] text-slate-500 font-mono tracking-widest mt-1">
+                  MISSION INTELLIGENCE SYSTEM
+                </p>
+              </div>
+
+              <div className="flex-1 h-[1px] bg-gradient-to-r from-cyan-500/50 to-transparent" />
+            </motion.div>
+
+            {/* SCAN */}
+            <div className="flex items-center gap-2 text-[9px] font-mono text-cyan-500/60 tracking-widest">
+              <Orbit size={12} className="animate-spin" />
+              ORBITAL SCAN COMPLETED
+              <span className="ml-auto text-green-400">100%</span>
+            </div>
+
+            {/* PARÂMETROS */}
+            <div className="flex flex-col gap-3">
+
+              {t.parameters.map((param, index) => {
+                const isExpanded = expandedId === param.id;
+
+                return (
+                  <motion.div
+                    initial={{ opacity: 0, x: 40, filter: 'blur(5px)' }}
+                    animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
+                    transition={{
+                      delay: 0.7 + index * 0.15,
+                      duration: 0.6,
+                    }}
+                    key={param.id}
+                    onClick={() =>
+                      setExpandedId(isExpanded ? null : param.id)
+                    }
+                    className={`relative group cursor-pointer overflow-hidden rounded-xl backdrop-blur-xl border transition-all duration-300 ${
+                      param.danger
+                        ? 'border-red-500/30 bg-gradient-to-r from-red-950/50 to-slate-950/60 hover:border-red-400/60'
+                        : 'border-cyan-500/20 bg-gradient-to-r from-cyan-950/40 to-slate-950/60 hover:border-cyan-400/60'
+                    }`}
+                  >
+                    <div
+                      className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${
+                        param.danger
+                          ? 'bg-gradient-to-r from-red-500/10 to-transparent'
+                          : 'bg-gradient-to-r from-cyan-500/10 to-transparent'
+                      }`}
+                    />
+
+                    <div className="relative flex items-center justify-between p-4">
+
+                      <div className="flex items-center gap-4">
+
+                        <div
+                          className={`p-3 rounded-lg border ${
+                            param.danger
+                              ? 'text-red-400 border-red-500/30 bg-red-950/50'
+                              : 'text-cyan-400 border-cyan-500/30 bg-cyan-950/50'
+                          }`}
+                        >
+                          {param.icon}
+                        </div>
+
+                        <div>
+                          <span className="text-[9px] text-slate-500 uppercase tracking-[0.2em] font-bold block mb-1">
+                            {param.label}
+                          </span>
+
+                          <span
+                            className={`font-mono text-sm tracking-wide ${
+                              param.danger ? 'text-red-300' : 'text-slate-200'
+                            }`}
+                          >
+                            {param.value}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-slate-200 font-mono text-sm tracking-wide">{param.value}</span>
-                        <ChevronDown size={16} className={`text-slate-500 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
-                      </div>
+
+                      <ChevronRight
+                        size={17}
+                        className={`transition-transform duration-300 ${
+                          isExpanded
+                            ? 'rotate-90 text-cyan-300'
+                            : 'text-slate-600 group-hover:translate-x-1 group-hover:text-cyan-400'
+                        }`}
+                      />
                     </div>
 
-                    {/* Conteúdo Expandido (Lore Científica/Contexto) */}
                     <AnimatePresence>
                       {isExpanded && (
                         <motion.div
                           initial={{ height: 0, opacity: 0 }}
                           animate={{ height: 'auto', opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
-                          className="px-4 pb-4"
+                          transition={{ duration: 0.3 }}
+                          className="relative overflow-hidden"
                         >
-                          <div className={`text-sm font-mono p-3 rounded-md border ${param.danger ? 'bg-red-950/50 border-red-900/30 text-red-200' : 'bg-slate-900/80 border-slate-700/50 text-slate-300'}`}>
-                            {param.lore}
+                          <div className="px-4 pb-4">
+                            <div className="pt-3 border-t border-slate-700/50">
+                              <p
+                                className={`text-xs font-mono leading-relaxed pl-3 border-l-2 ${
+                                  param.danger
+                                    ? 'border-red-500/50 text-red-200'
+                                    : 'border-cyan-500/50 text-slate-400'
+                                }`}
+                              >
+                                {param.lore}
+                              </p>
+                            </div>
                           </div>
                         </motion.div>
                       )}
                     </AnimatePresence>
-                  </div>
+                  </motion.div>
                 );
               })}
             </div>
-          </motion.div>
 
-          {/* Botão de Start do Jogo */}
-          <motion.button 
+            {/* BOTÃO DE AUTORIZAÇÃO COM CARREGAMENTO */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.4 }}
+              className={`mt-2 relative w-full rounded-xl border bg-slate-950/70 backdrop-blur-xl overflow-hidden shadow-[0_0_35px_rgba(6,182,212,0.08)] ${
+                isPressing
+                  ? 'border-cyan-300 shadow-[0_0_35px_rgba(34,211,238,0.3)]'
+                  : 'border-cyan-500/40'
+              }`}
+            >
+              {/* Barra de energia que avança enquanto o botão fica pressionado */}
+              <motion.div
+                className="absolute inset-y-0 left-0 z-0 bg-gradient-to-r from-cyan-700/50 via-cyan-500/40 to-cyan-300/50"
+                animate={{ width: `${holdProgress}%` }}
+                transition={{ duration: 0.08, ease: 'linear' }}
+              />
+
+              <div
+                className="absolute top-0 left-0 z-[1] h-[2px] bg-gradient-to-r from-transparent via-cyan-200 to-transparent"
+                style={{ width: `${holdProgress}%` }}
+              />
+
+              <button
+                type="button"
+                onPointerDown={handlePointerDown}
+                onPointerUp={handlePointerUp}
+                onPointerCancel={handlePointerUp}
+                onLostPointerCapture={handlePointerUp}
+                disabled={isTyping || isLaunching}
+                className={`relative z-10 w-full h-16 flex items-center justify-center gap-3 font-bold uppercase tracking-[0.2em] transition-all duration-300 text-xs touch-none ${
+                  isTyping || isLaunching
+                    ? 'text-slate-600 cursor-not-allowed'
+                    : 'text-cyan-300 hover:text-white active:scale-[0.98] cursor-pointer'
+                }`}
+              >
+                {isTyping ? (
+                  <>
+                    <Radio size={18} className="animate-pulse" />
+                    {t.receiving}
+                  </>
+                ) : isLaunching ? (
+                  <>
+                    <Rocket size={20} className="animate-pulse" />
+                    {t.launching}
+                  </>
+                ) : (
+                  <>
+                    <Fingerprint
+                      size={22}
+                      className={isPressing ? 'animate-pulse text-cyan-100' : 'text-cyan-400'}
+                    />
+                    {t.deployBtn}
+                    {isPressing && (
+                      <span className="absolute right-5 font-mono text-cyan-100 text-xs">
+                        {Math.floor(holdProgress)}%
+                      </span>
+                    )}
+                  </>
+                )}
+              </button>
+            </motion.div>
+
+            {/* RODAPÉ */}
+            <div className="flex items-center justify-between text-[9px] font-mono tracking-widest text-slate-600">
+              <span>MISSION ID: LUNA-001</span>
+
+              <span className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                CONNECTION SECURE
+              </span>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Animação de lançamento cobrindo a tela; depois muda para exploration. */}
+      <AnimatePresence>
+        {isLaunching && (
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 1 }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setScreen('exploration')}
-            disabled={isTyping}
-            className={`w-full flex items-center justify-center gap-3 font-bold py-6 px-8 rounded-xl uppercase tracking-[0.2em] transition-all duration-300 text-lg
-              ${isTyping 
-                ? 'bg-slate-800 text-slate-500 cursor-not-allowed border-2 border-slate-700' 
-                : 'bg-cyan-600 text-white shadow-[0_0_30px_rgba(8,145,178,0.5)] hover:shadow-[0_0_50px_rgba(8,145,178,0.8)] border-2 border-cyan-400 hover:bg-cyan-500'
-              }`}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-[#020617]/95"
           >
-            {isTyping ? t.receiving : t.deployBtn}
-            {!isTyping && <Rocket size={24} className="animate-pulse" />}
-          </motion.button>
-          
-        </div>
+            {/* Clarão e vibração visual dos motores */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.2 }}
+              animate={{ opacity: [0.2, 0.8, 0.25, 0.9, 0.3], scale: [0.2, 1.5, 0.8, 1.8, 1] }}
+              transition={{ duration: 1.1, repeat: Infinity, ease: 'easeInOut' }}
+              className="pointer-events-none absolute bottom-[-25%] left-1/2 h-[70vh] w-[70vh] -translate-x-1/2 rounded-full bg-cyan-400/20 blur-3xl"
+            />
 
-      </div>
+            {/* Linhas de velocidade */}
+            {Array.from({ length: 24 }).map((_, index) => (
+              <motion.span
+                key={index}
+                initial={{ y: '-20vh', opacity: 0 }}
+                animate={{ y: '120vh', opacity: [0, 0.8, 0] }}
+                transition={{
+                  duration: 0.55 + (index % 5) * 0.12,
+                  repeat: Infinity,
+                  delay: (index % 8) * 0.08,
+                  ease: 'linear',
+                }}
+                className="absolute top-0 h-20 w-px bg-gradient-to-b from-transparent via-cyan-300 to-transparent"
+                style={{ left: `${(index * 37) % 100}%` }}
+              />
+            ))}
+
+            <div className="relative z-10 flex flex-col items-center text-center">
+              <motion.div
+                initial={{ y: 180, scale: 0.7, rotate: -8 }}
+                animate={{ y: -260, scale: [0.8, 1, 0.85], rotate: [0, -2, 2, 0] }}
+                transition={{ duration: 3.2, ease: [0.2, 0.7, 0.35, 1] }}
+                className="relative mb-8"
+              >
+                <motion.div
+                  animate={{ scaleY: [0.8, 1.35, 0.9, 1.5], opacity: [0.75, 1, 0.8, 1] }}
+                  transition={{ duration: 0.16, repeat: Infinity }}
+                  className="absolute top-[78%] left-1/2 h-32 w-12 -translate-x-1/2 rounded-full bg-gradient-to-b from-yellow-200 via-orange-500 to-transparent blur-md"
+                />
+                <Rocket size={112} strokeWidth={1.2} className="relative z-10 rotate-[-45deg] text-slate-100 drop-shadow-[0_0_25px_rgba(34,211,238,0.8)]" />
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="absolute bottom-[-150px] w-[min(90vw,520px)]"
+              >
+                <div className="mb-3 flex items-center justify-center gap-2 text-cyan-300">
+                  <Zap size={18} className="animate-pulse" />
+                  <p className="font-mono text-sm font-bold tracking-[0.25em] uppercase">{t.launching}</p>
+                  <Zap size={18} className="animate-pulse" />
+                </div>
+                <p className="font-mono text-xs tracking-[0.2em] text-slate-400 uppercase">{t.launchSub}</p>
+                <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-slate-800">
+                  <motion.div
+                    initial={{ width: '0%' }}
+                    animate={{ width: '100%' }}
+                    transition={{ duration: 3.1, ease: 'linear' }}
+                    className="h-full bg-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.9)]"
+                  />
+                </div>
+              </motion.div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
