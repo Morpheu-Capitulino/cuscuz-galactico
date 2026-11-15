@@ -10,33 +10,33 @@ interface LumiCharacterProps {
 
 export function LumiCharacter({ mood = 'idle', launchProgress = 0, className = '' }: LumiCharacterProps) {
   // O segredo para um PNG ganhar vida: Squash and Stretch (Comprimir e Esticar)
-  const imgVariants = {
+  const imgVariants: any = {
     idle: {
       y: [0, -8, 0],
       scaleY: [1, 0.97, 1], // Achata levemente quando desce
       scaleX: [1, 1.02, 1], // Alarga levemente quando desce
       rotate: [-1, 2, -1],
-      transition: { duration: 3.5, repeat: Infinity, ease: 'easeInOut' }
+      transition: { duration: 3.5, repeat: Infinity }
     },
     speaking: {
       y: [0, -12, 0],
       scaleY: [1, 1.05, 0.97, 1], // Pula e estica
       scaleX: [1, 0.96, 1.03, 1],
       rotate: [-2, 3, -1, 2, -2],
-      transition: { duration: 2.2, repeat: Infinity, ease: 'easeInOut' }
+      transition: { duration: 2.2, repeat: Infinity }
     },
     happy: {
       y: [0, -25, 0],
       scaleY: [1, 1.12, 0.92, 1], // Pulo alto com muito estiramento
       scaleX: [1, 0.9, 1.08, 1],
       rotate: [-5, 5, -5],
-      transition: { duration: 1.2, repeat: Infinity, ease: 'easeInOut' }
+      transition: { duration: 1.2, repeat: Infinity }
     },
     thinking: {
       y: [0, -4, 0],
       scaleY: [1, 0.98, 1],
       rotate: [6, 10, 6], // Fica inclinadinha analisando
-      transition: { duration: 4, repeat: Infinity, ease: 'easeInOut' }
+      transition: { duration: 4, repeat: Infinity }
     },
     alert: {
       y: [0, -5, 0],
@@ -126,8 +126,7 @@ export function LumiCharacter({ mood = 'idle', launchProgress = 0, className = '
         }
         transition={{
           duration: mood === 'happy' ? 1.2 : mood === 'speaking' ? 2.2 : 3.5,
-          repeat: Infinity,
-          ease: 'easeInOut'
+          repeat: Infinity
         }}
         className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-20 h-4 bg-black/60 blur-md rounded-[100%] -z-20 pointer-events-none"
       />

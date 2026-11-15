@@ -100,7 +100,6 @@ export default function Exploration() {
   useEffect(() => { anomaliesRef.current = anomalies; }, [anomalies]);
 
   const [shakeScreen, setShakeScreen] = useState(false);
-  const [setTurretFlash] = useState(false);
   const [meteorMadness, setMeteorMadness] = useState(false);
   const meteorMadnessTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const comboTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -159,13 +158,13 @@ export default function Exploration() {
   }, []);
 
   const resetAllResources = useCallback(() => {
-  useGameStore.setState({
-    inventory: { regolith: 0, ice: 0, parts: 0 },
-    indicators: { o2: 100, water: 100, food: 100, energy: 100, shield: 100 },
-    laserLevel: 1, radarLevel: 1, cargoLevel: 1, engineLevel: 1, coreLevel: 1,
-    droneLevel: 0, shieldLevel: 0, armorLevel: 0, scoopLevel: 0, turretLevel: 0
-  });
-}, []);
+    useGameStore.setState({
+      inventory: { regolith: 0, ice: 0, parts: 0 },
+      indicators: { o2: 100, water: 100, food: 100, energy: 100, shield: 100 },
+      laserLevel: 1, radarLevel: 1, cargoLevel: 1, engineLevel: 1, coreLevel: 1,
+      droneLevel: 0, shieldLevel: 0, armorLevel: 0, scoopLevel: 0, turretLevel: 0
+    });
+  }, []);
 
   const finishTutorial = useCallback(() => {
     resetAllResources();
@@ -888,7 +887,7 @@ export default function Exploration() {
               initial={{ opacity: 1, y: 0, scale: 0.5 }} 
               animate={{ opacity: 0, y: -60, scale: 1.2 }} 
               exit={{ opacity: 0 }} 
-              transition={{ duration: 0.8, ease: "easeOut" }} 
+              transition={{ duration: 0.8 }} 
               style={{ left: `${text.x}%`, top: `${text.y}%` }}
               className={`absolute pointer-events-none font-black text-xl md:text-3xl font-mono ${text.color} drop-shadow-[0_0_10px_rgba(0,0,0,1)] z-[110] whitespace-nowrap -translate-x-1/2 -translate-y-1/2`}
             >

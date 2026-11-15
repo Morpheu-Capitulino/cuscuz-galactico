@@ -1,47 +1,62 @@
-import type { Inventory } from '../../store/gameStore';
+// src/data/structures/structures.ts
+import type { Inventory, BaseIndicators } from '../../store/gameStore';
 
-export interface StructureData {
+export interface StructureDefinition {
   id: string;
   name: string;
   description: string;
   cost: Partial<Inventory>;
-  iconRef: string; // Referência visual para o seu amigo renderizar
+  effects: Partial<BaseIndicators>;
 }
 
-export const STRUCTURES: StructureData[] = [
+export const STRUCTURES: StructureDefinition[] = [
   {
-    id: 'lunar-habitat',
-    name: 'Lunar Habitat',
-    description: 'Abriga a tripulação e serve como centro de comando vital.',
-    cost: { regolith: 50, ice: 10 },
-    iconRef: 'home'
+    id: 'habitat',
+    name: 'Abrigo Principal',
+    description: 'Módulo central pressurizado que gera e mantém o oxigénio da tripulação.',
+    cost: { regolith: 30, parts: 15 },
+    effects: { o2: 20 }
   },
   {
-    id: 'solar-panel',
-    name: 'Solar Panels',
-    description: 'Gera energia constante para manter os sistemas da base.',
-    cost: { regolith: 30 },
-    iconRef: 'sun'
-  },
-  {
-    id: 'water-recycler',
-    name: 'Water Recycler',
-    description: 'Purifica e recupera parte da água consumida pela tripulação.',
-    cost: { regolith: 40, energy: 20 },
-    iconRef: 'droplet'
+    id: 'purifier',
+    name: 'Filtro de Água',
+    description: 'Extrai e purifica o gelo lunar para garantir água potável contínua.',
+    cost: { regolith: 25, ice: 20, parts: 10 },
+    effects: { water: 25 }
   },
   {
     id: 'greenhouse',
-    name: 'Greenhouse',
-    description: 'Produz alimentos para sustentar os astronautas.',
-    cost: { regolith: 30, ice: 30 },
-    iconRef: 'leaf'
+    name: 'Estufa Hidropónica',
+    description: 'Cultivo selado de vegetais espaciais ricos em nutrientes.',
+    cost: { regolith: 30, ice: 25, parts: 20 },
+    effects: { food: 25, o2: 5 }
   },
   {
-    id: 'radiation-shelter',
-    name: 'Radiation Shelter',
-    description: 'Proteção pesada contra emissões letais de tempestades solares.',
-    cost: { regolith: 100 },
-    iconRef: 'shield'
+    id: 'solar',
+    name: 'Painéis Solares',
+    description: 'Capta a radiação solar para alimentar todos os sistemas vitais da base.',
+    cost: { regolith: 20, parts: 25 },
+    effects: { energy: 30 }
+  },
+  {
+    id: 'radiation',
+    name: 'Escudo de Radiação',
+    description: 'Campo defletor magnético contra tempestades solares e micrometeoritos.',
+    cost: { regolith: 50, parts: 35 },
+    effects: { shield: 35 }
+  },
+  {
+    id: 'medical',
+    name: 'Posto Médico',
+    description: 'Unidade de tratamento intensivo para recuperação da saúde dos astronautas.',
+    cost: { regolith: 35, ice: 15, parts: 30 },
+    effects: { o2: 5 }
+  },
+  {
+    id: 'dormitory',
+    name: 'Dormitório da Tripulação',
+    description: 'Alojamentos isolados que aceleram a recuperação de energia e fadiga.',
+    cost: { regolith: 40, parts: 20 },
+    effects: { energy: 10 }
   }
 ];
