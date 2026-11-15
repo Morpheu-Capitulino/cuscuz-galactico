@@ -3,82 +3,116 @@ import { useGameStore, type TutorialStepId } from '../../store/gameStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bot, Database } from 'lucide-react';
 
+interface BilingualText {
+  pt: string;
+  en: string;
+}
+
 interface StepConfig {
-  title: string;
-  message: string;
+  title: BilingualText;
+  message: BilingualText;
   targetId?: string;
-  actionLabel?: string;
+  actionLabel?: BilingualText;
   requireAction?: boolean;
   next?: TutorialStepId;
 }
 
 const STEPS: Record<TutorialStepId, StepConfig> = {
   SUPPLIES_ARRIVAL: {
-    title: 'CARGA RECEBIDA!',
-    message: 'Comandante, finalmente pousamos! Nossa nave acabou de transferir os suprimentos iniciais para a colônia. Agora podemos começar a preparar nossa base lunar!',
+    title: { pt: 'CARGA RECEBIDA!', en: 'CARGO RECEIVED!' },
+    message: {
+      pt: 'Comandante, finalmente pousamos! Nossa nave acabou de transferir os suprimentos iniciais para a colônia. Agora podemos começar a preparar nossa base lunar!',
+      en: 'Commander, we finally landed! Our ship just transferred the initial supplies to the colony. Now we can start preparing our lunar base!'
+    },
     requireAction: false,
     next: 'HUD_RESOURCES'
   },
   HUD_RESOURCES: {
-    title: 'PAINEL DE CONTROLE',
-    message: 'Antes de começarmos, precisamos entender o painel. Aqui você acompanha os materiais que recebemos e nossos indicadores de sobrevivência.',
+    title: { pt: 'PAINEL DE CONTROLE', en: 'CONTROL PANEL' },
+    message: {
+      pt: 'Antes de começarmos, precisamos entender o painel. Aqui você acompanha os materiais que recebemos e nossos indicadores de sobrevivência.',
+      en: 'Before we begin, let us understand the HUD. Here you track the materials we received and our vital survival indicators.'
+    },
     targetId: 'hud-resources',
     requireAction: false,
     next: 'CREW_INTRO'
   },
   CREW_INTRO: {
-    title: 'NOSSA TRIPULAÇÃO',
-    message: 'Esta é nossa equipe! Cada astronauta possui uma profissão e uma habilidade especial. Precisamos cuidar da saúde e da energia de todos.',
+    title: { pt: 'NOSSA TRIPULAÇÃO', en: 'OUR CREW' },
+    message: {
+      pt: 'Esta é nossa equipe! Cada astronauta possui uma profissão e uma habilidade especial. Precisamos cuidar da saúde e da energia de todos.',
+      en: 'This is our team! Each astronaut has a profession and a special skill. We must take care of everyone\'s health and energy.'
+    },
     targetId: 'crew-panel',
     requireAction: false,
     next: 'BUILD_HABITAT'
   },
   BUILD_HABITAT: {
-    title: 'PRIMEIRA CONSTRUÇÃO',
-    message: 'Vamos construir nosso abrigo! Selecione o Abrigo Principal e clique em CONSTRUIR. No modo de treinamento, você tem materiais infinitos!',
+    title: { pt: 'PRIMEIRA CONSTRUÇÃO', en: 'FIRST CONSTRUCTION' },
+    message: {
+      pt: 'Vamos construir nosso abrigo! Selecione o Abrigo Principal e clique em CONSTRUIR. No modo de treinamento, você tem materiais infinitos!',
+      en: 'Let\'s build our shelter! Select the Main Habitat and click BUILD. In training mode, you have infinite materials!'
+    },
     targetId: 'build-habitat',
-    actionLabel: 'CLIQUE EM CONSTRUIR',
+    actionLabel: { pt: 'CLIQUE EM CONSTRUIR', en: 'CLICK TO BUILD' },
     requireAction: true
   },
   ASSIGN_ENGINEER: {
-    title: 'MÃO NA MASSA',
-    message: 'Para acelerar, designe o Engenheiro Torres para a obra. Ele é o especialista nisso.',
+    title: { pt: 'MÃO NA MASSA', en: 'HANDS ON DECK' },
+    message: {
+      pt: 'Para acelerar, designe o Engenheiro Torres para a obra. Ele é o especialista nisso.',
+      en: 'To speed things up, assign Engineer Torres to the job. He is the specialist for this.'
+    },
     targetId: 'assign-engineer',
-    actionLabel: 'SELECIONE O ENGENHEIRO',
+    actionLabel: { pt: 'SELECIONE O ENGENHEIRO', en: 'SELECT THE ENGINEER' },
     requireAction: true
   },
   ACTIVATE_SIMULATION: {
-    title: 'INICIAR O TEMPO',
-    message: 'A equipe está pronta! Clique no botão CONTINUAR no painel superior para que o relógio ande e o trabalho avance!',
+    title: { pt: 'INICIAR O TEMPO', en: 'START TIME' },
+    message: {
+      pt: 'A equipe está pronta! Clique no botão PLAY no painel superior para que o relógio ande e o trabalho avance!',
+      en: 'The crew is ready! Click the PLAY button on the top panel so the clock ticks and the work progresses!'
+    },
     targetId: 'play-button',
-    actionLabel: 'CLIQUE NO PLAY',
+    actionLabel: { pt: 'CLIQUE NO PLAY', en: 'CLICK PLAY' },
     requireAction: true
   },
   WAIT_PROGRESS: {
-    title: 'ACOMPANHANDO A OBRA',
-    message: 'Muito bem! O tempo está passando. Observe a barra de progresso do nosso módulo até ele ficar pronto.',
+    title: { pt: 'ACOMPANHANDO A OBRA', en: 'TRACKING PROGRESS' },
+    message: {
+      pt: 'Muito bem! O tempo está passando. Observe a barra de progresso do nosso módulo até ele ficar pronto.',
+      en: 'Great job! Time is moving. Watch our module\'s progress bar until it is completed.'
+    },
     targetId: 'habitat-progress',
     requireAction: true 
   },
   EXPLORATION_INTRO: {
-    title: 'BUSCA POR MATERIAIS',
-    message: 'CONSEGUIMOS! Nosso Abrigo está pronto! Quando precisar de mais recursos, acesse a aba EXPLORAÇÃO e envie nosso rover em missões.',
+    title: { pt: 'BUSCA POR MATERIAIS', en: 'SEARCH FOR MATERIALS' },
+    message: {
+      pt: 'CONSEGUIMOS! Nosso Abrigo está pronto! Quando precisar de mais recursos, acesse a aba EXPLORAÇÃO e envie nosso rover em missões.',
+      en: 'WE DID IT! Our Habitat is ready! Whenever you need more resources, open the EXPLORATION tab and send our rover on missions.'
+    },
     targetId: 'exploration-tab',
-    actionLabel: 'ABRA A EXPLORAÇÃO', // A etiqueta saltitante ajuda a criança
-    requireAction: true // Remove o botão CONTINUAR
+    actionLabel: { pt: 'ABRA A EXPLORAÇÃO', en: 'OPEN EXPLORATION' },
+    requireAction: true
   },
   RESEARCH_INTRO: {
-    title: 'TECNOLOGIAS',
-    message: 'Em DESCOBERTAS, podemos usar Peças para desenvolver novas tecnologias e melhorar a colônia. Agora você está no comando. Boa sorte!',
+    title: { pt: 'TECNOLOGIAS', en: 'TECHNOLOGIES' },
+    message: {
+      pt: 'Em DESCOBERTAS, podemos usar Peças para desenvolver novas tecnologias e melhorar a colônia. Agora você está no comando. Boa sorte!',
+      en: 'In DISCOVERIES, we can use Parts to develop new technologies and upgrade the colony. You are in command now. Good luck!'
+    },
     targetId: 'research-tab',
-    actionLabel: 'ABRA AS DESCOBERTAS',
-    requireAction: true // Remove o botão CONTINUAR
+    actionLabel: { pt: 'ABRA AS DESCOBERTAS', en: 'OPEN DISCOVERIES' },
+    requireAction: true
   },
-  COMPLETED: { title: '', message: '' }
+  COMPLETED: { title: { pt: '', en: '' }, message: { pt: '', en: '' } }
 };
 
 export function LumiTutorial() {
   const store = useGameStore();
+  const isEn = store.language === 'en';
+  const lang = isEn ? 'en' : 'pt';
   const stepId = store.tutorialStep;
   const config = STEPS[stepId];
   
@@ -163,7 +197,7 @@ export function LumiTutorial() {
           >
             {config.actionLabel && (
               <div className="absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap bg-cyan-950 text-cyan-300 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded border border-cyan-500 shadow-[0_0_15px_rgba(34,211,238,0.5)] animate-bounce">
-                {config.actionLabel}
+                {config.actionLabel[lang]}
               </div>
             )}
           </motion.div>
@@ -184,13 +218,23 @@ export function LumiTutorial() {
             className="fixed top-1/4 left-1/2 -translate-x-1/2 z-[85] bg-slate-900 border-2 border-emerald-500 p-6 rounded-2xl shadow-[0_0_50px_rgba(16,185,129,0.3)] text-center flex flex-col items-center"
           >
             <Database size={40} className="text-emerald-400 mb-3 animate-bounce" />
-            <h2 className="text-emerald-400 font-black text-xl tracking-[0.2em] mb-4">DESCARGA CONCLUÍDA</h2>
+            <h2 className="text-emerald-400 font-black text-xl tracking-[0.2em] mb-4">
+              {isEn ? 'UNLOADING COMPLETE' : 'DESCARGA CONCLUÍDA'}
+            </h2>
             <div className="flex gap-6 text-2xl font-black font-mono">
-              <span className="text-slate-300 flex flex-col items-center gap-1"><span className="text-[10px] text-slate-500 uppercase tracking-widest">Pedras</span> +99.999.999</span>
-              <span className="text-blue-300 flex flex-col items-center gap-1"><span className="text-[10px] text-blue-500 uppercase tracking-widest">Gelo</span> +99.999.999</span>
-              <span className="text-orange-300 flex flex-col items-center gap-1"><span className="text-[10px] text-orange-500 uppercase tracking-widest">Peças</span> +99.999.999</span>
+              <span className="text-slate-300 flex flex-col items-center gap-1">
+                <span className="text-[10px] text-slate-500 uppercase tracking-widest">{isEn ? 'Regolith' : 'Pedras'}</span> +99.999.999
+              </span>
+              <span className="text-blue-300 flex flex-col items-center gap-1">
+                <span className="text-[10px] text-blue-500 uppercase tracking-widest">{isEn ? 'Ice' : 'Gelo'}</span> +99.999.999
+              </span>
+              <span className="text-orange-300 flex flex-col items-center gap-1">
+                <span className="text-[10px] text-orange-500 uppercase tracking-widest">{isEn ? 'Parts' : 'Peças'}</span> +99.999.999
+              </span>
             </div>
-            <p className="mt-4 text-[10px] text-emerald-600 font-bold uppercase tracking-widest bg-emerald-950/50 px-4 py-1.5 rounded-full">Modo de Treinamento Ativado</p>
+            <p className="mt-4 text-[10px] text-emerald-600 font-bold uppercase tracking-widest bg-emerald-950/50 px-4 py-1.5 rounded-full">
+              {isEn ? 'Training Mode Activated' : 'Modo de Treinamento Ativado'}
+            </p>
           </motion.div>
         )}
       </AnimatePresence>
@@ -207,8 +251,10 @@ export function LumiTutorial() {
         </div>
         
         <div className="bg-[#071a3b]/95 backdrop-blur-xl border-2 border-cyan-400/50 rounded-2xl p-5 shadow-[0_0_40px_rgba(6,182,212,0.3)] relative">
-          <h4 className="text-[10px] font-black text-cyan-400 tracking-widest uppercase mb-1.5 flex items-center gap-1.5"><Bot size={14}/> {config.title}</h4>
-          <p className="text-sm text-cyan-50 font-medium leading-relaxed mb-4">{config.message}</p>
+          <h4 className="text-[10px] font-black text-cyan-400 tracking-widest uppercase mb-1.5 flex items-center gap-1.5">
+            <Bot size={14}/> {config.title[lang]}
+          </h4>
+          <p className="text-sm text-cyan-50 font-medium leading-relaxed mb-4">{config.message[lang]}</p>
           
           <div className="flex gap-2 justify-end">
             {!config.requireAction && config.next && (
@@ -222,18 +268,22 @@ export function LumiTutorial() {
                 }} 
                 className="bg-cyan-600 hover:bg-cyan-500 text-white text-[10px] font-black tracking-widest px-5 py-2.5 rounded-lg transition-colors shadow-lg"
               >
-                {config.actionLabel || 'CONTINUAR'}
+                {config.actionLabel ? config.actionLabel[lang] : (isEn ? 'CONTINUE' : 'CONTINUAR')}
               </button>
             )}
             
             {showSkipConfirm ? (
               <div className="flex gap-2">
-                <button onClick={() => store.endTutorial()} className="bg-red-600 hover:bg-red-500 text-white text-[10px] font-black tracking-widest px-4 py-2.5 rounded-lg transition-colors">SAIR AGORA</button>
-                <button onClick={() => setShowSkipConfirm(false)} className="bg-slate-700 hover:bg-slate-600 text-white text-[10px] font-black tracking-widest px-4 py-2.5 rounded-lg transition-colors">VOLTAR</button>
+                <button onClick={() => store.endTutorial()} className="bg-red-600 hover:bg-red-500 text-white text-[10px] font-black tracking-widest px-4 py-2.5 rounded-lg transition-colors">
+                  {isEn ? 'EXIT NOW' : 'SAIR AGORA'}
+                </button>
+                <button onClick={() => setShowSkipConfirm(false)} className="bg-slate-700 hover:bg-slate-600 text-white text-[10px] font-black tracking-widest px-4 py-2.5 rounded-lg transition-colors">
+                  {isEn ? 'BACK' : 'VOLTAR'}
+                </button>
               </div>
             ) : (
               <button onClick={() => setShowSkipConfirm(true)} className="bg-slate-800 hover:bg-slate-700 text-slate-400 text-[10px] font-black tracking-widest px-4 py-2.5 rounded-lg transition-colors border border-slate-700">
-                PULAR
+                {isEn ? 'SKIP' : 'PULAR'}
               </button>
             )}
           </div>

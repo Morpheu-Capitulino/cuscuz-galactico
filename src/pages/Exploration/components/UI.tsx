@@ -1,6 +1,5 @@
-// src/pages/Exploration/components/UI.tsx
 import { motion, AnimatePresence } from 'framer-motion';
-import { Pickaxe, Settings, Droplets, ShoppingCart, X, Crosshair, Activity, Bot, Package, Shield, Rocket, Layers, Cpu, Magnet, Target, ChevronRight } from 'lucide-react';
+import { Pickaxe, Settings, Droplets, ShoppingCart, X, Crosshair, Activity, Bot, Package, Shield, Rocket, Layers, Cpu, Magnet, Target, ChevronRight, Trophy, Lock, Archive, Fingerprint, Database, FileText } from 'lucide-react';
 import { useGameStore } from '../../../store/gameStore';
 
 const colorStyles: Record<string, any> = {
@@ -155,6 +154,111 @@ export const ShopModal = ({ isOpen, onClose, t, laserLevel, radarLevel, droneLev
                 })}
               </div>
             </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+};
+
+// ==========================================
+// TELA DO DIÁRIO DE BORDO (TEMA NASA CLASSIFIED / SCI-FI)
+// ==========================================
+export const LogbookModal = ({ isOpen, onClose, t, unlockedEvents = [], lang, gameEvents = [] }: any) => {
+  const totalUnlocked = unlockedEvents.length;
+  const totalEvents = gameEvents.length;
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="absolute inset-0 bg-slate-950/90 backdrop-blur-xl z-[200] pointer-events-auto flex items-center justify-center p-4 md:p-8" />
+          
+          <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }} transition={{ type: 'spring', damping: 25, stiffness: 300 }} className="absolute inset-4 md:inset-12 bg-slate-900 border border-blue-900/50 rounded-lg flex flex-col z-[210] shadow-2xl pointer-events-auto overflow-hidden ring-1 ring-white/10">
+            
+            {/* Header Estilo Terminal */}
+            <div className="p-4 md:p-6 border-b border-blue-900/50 flex items-center justify-between bg-slate-950 relative overflow-hidden shrink-0">
+              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 mix-blend-overlay pointer-events-none" />
+              <div className="flex items-center gap-4 relative z-10">
+                <div className="p-3 bg-blue-950 rounded-lg border border-blue-800 shadow-[0_0_20px_rgba(30,58,138,0.5)]">
+                  <Database size={24} className="text-blue-400"/>
+                </div>
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-blue-100 font-bold uppercase tracking-widest text-lg md:text-xl leading-none">ARQUIVOS NASA</h2>
+                    <span className="px-2 py-0.5 rounded bg-red-900/50 text-red-400 text-[9px] font-black border border-red-700/50 tracking-widest uppercase">Secret</span>
+                  </div>
+                  <p className="text-blue-500/80 font-mono text-[10px] md:text-xs tracking-[0.2em] mt-1.5 uppercase">Registros Recuperados: {totalUnlocked} / {totalEvents}</p>
+                </div>
+              </div>
+              <button onClick={onClose} className="relative z-10 text-slate-500 hover:text-white bg-slate-900 hover:bg-blue-900/50 p-2.5 rounded-lg transition-all border border-slate-800 hover:border-blue-500/50">
+                <X size={20}/>
+              </button>
+            </div>
+            
+            {/* Grid de Missões */}
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-900/50 relative" style={{ scrollbarWidth: 'thin', scrollbarColor: '#1e3a8a transparent' }}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                {gameEvents.map((evt: any, idx: number) => {
+                  const isUnlocked = unlockedEvents.includes(evt.id);
+                  const numStr = String(idx + 1).padStart(3, '0');
+                  
+                  return (
+                    <motion.div whileHover={isUnlocked ? { scale: 1.01, y: -2 } : {}} key={idx} className={`relative rounded-xl flex flex-col h-full transition-all duration-300 overflow-hidden ${isUnlocked ? 'bg-slate-800/80 border border-blue-500/30 shadow-[0_4px_20px_rgba(0,0,0,0.4)]' : 'bg-slate-950/80 border border-slate-800/80'}`}>
+                      
+                      {/* Faixa Superior do Card */}
+                      <div className={`flex items-center justify-between px-4 py-2 border-b ${isUnlocked ? 'bg-blue-950/40 border-blue-900/50' : 'bg-slate-900/50 border-slate-800/50'}`}>
+                         <span className={`font-mono text-[10px] tracking-widest uppercase ${isUnlocked ? 'text-blue-400' : 'text-slate-600'}`}>FILE_{numStr}</span>
+                         {isUnlocked ? (
+                           <div className="flex items-center gap-1.5">
+                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                             <span className="text-[9px] font-mono text-emerald-400 uppercase tracking-wider">Descriptografado</span>
+                           </div>
+                         ) : (
+                           <span className="text-[9px] font-mono text-red-500/60 uppercase tracking-wider line-through decoration-red-500/30">Corrompido</span>
+                         )}
+                      </div>
+
+                      <div className="p-5 flex flex-col flex-1 relative">
+                        {isUnlocked ? (
+                          <>
+                            <h3 className="text-slate-100 font-bold text-sm md:text-base uppercase tracking-wide leading-tight mb-2 flex items-center gap-2">
+                              <Archive className="text-blue-400 shrink-0" size={16} />
+                              {evt.title[lang]}
+                            </h3>
+                            <p className="text-slate-400 text-xs font-mono leading-relaxed bg-black/30 p-3 rounded flex-1 border border-slate-700/50 mb-4 shadow-inner">
+                              {evt.desc[lang]}
+                            </p>
+                            
+                            {/* Fato Histórico (Ouro) */}
+                            <div className="mt-auto relative pt-4">
+                              <div className="absolute top-0 left-0 w-8 h-px bg-amber-500/50" />
+                              <div className="flex items-center gap-2 mb-2">
+                                <FileText size={14} className="text-amber-500" />
+                                <span className="text-[9px] text-amber-500 font-black tracking-[0.15em] uppercase">{t.historyFact}</span>
+                              </div>
+                              <p className="text-amber-100/80 text-[11px] md:text-xs font-sans leading-relaxed pl-2 border-l-2 border-amber-500/20">
+                                {evt.history[lang]}
+                              </p>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="flex flex-col items-center justify-center h-full gap-4 py-8 opacity-40 grayscale">
+                            <Fingerprint size={48} className="text-slate-600 opacity-50" />
+                            <div className="text-center px-4">
+                              <h3 className="text-slate-400 font-bold text-sm uppercase tracking-[0.2em] mb-2">{t.locked}</h3>
+                              <p className="text-slate-500 text-[10px] md:text-xs font-mono">{t.lockedDesc}</p>
+                            </div>
+                            <div className="w-32 h-2 mt-2 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPgo8cmVjdCB3aWR0aD0iNCIgaGVpZ2h0PSI0IiBmaWxsPSJ0cmFuc3BhcmVudCI+PC9yZWN0Pgo8cGF0aCBkPSJNMCAwTDQgNFpNNCBMIDBaIiBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPgo8L3N2Zz4=')] opacity-30" />
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </div>
+            
           </motion.div>
         </>
       )}

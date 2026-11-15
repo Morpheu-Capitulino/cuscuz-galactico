@@ -1,12 +1,109 @@
 import { useGameStore } from '../../store/gameStore';
-import { Target, Bot, Construction } from 'lucide-react';
+import { Target, Bot, Construction, MessageSquare } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useRef, useState, ReactNode } from 'react';
+import { sfx } from './soundEffects';
 
 interface ColonyMapProps {
   lumiMessage: string;
   selectedNode: string | null;
   onSelectNode: (id: string, tab: 'construcao'|'exploracao'|'descobertas') => void;
+}
+
+// ==========================================
+// BALÕES DE FALA DINÂMICOS DA TRIPULAÇÃO (ITEM 4)
+// ==========================================
+function CrewSpeechBubble() {
+  const store = useGameStore();
+  const isEn = store.language === 'en';
+  const [chatter, setChatter] = useState<{ name: string; role: string; text: string; pos: string } | null>(null);
+
+  useEffect(() => {
+    if (store.isPaused || store.isTrainingMode) return;
+
+    const interval = setInterval(() => {
+      const activeCrew = store.crew.filter(c => c.status !== 'incapacitado');
+      if (activeCrew.length === 0) return;
+
+      const speaker = activeCrew[Math.floor(Math.random() * activeCrew.length)];
+      let text = '';
+
+      // Prioridade 1: Emergências de Sobrevivência
+      if (store.indicators.o2 < 30) {
+        text = isEn ? "Air is getting thin... We need the Main Habitat upgraded!" : "O ar está ficando rarefeito... Precisamos melhorar o Abrigo!";
+      } else if (store.indicators.water < 30) {
+        text = isEn ? "My canteen is nearly dry! Check the Water Purifier!" : "Meu cantil está quase seco! Olhem o Filtro de Água!";
+      } else if (store.indicators.food < 30) {
+        text = isEn ? "Stomach is rumbling... Space rations are running low!" : "Meu estômago está roncando... As rações estão acabando!";
+      } else if (speaker.energy < 35) {
+        text = isEn ? "I'm exhausted... Need some rest in the Crew Quarters soon." : "Estou exausto... Preciso descansar no Dormitório logo.";
+      } 
+      // Prioridade 2: Comentários sobre a Tarefa Atual
+      else if (speaker.assignment?.type === 'building' || speaker.assignment?.type === 'upgrade') {
+        text = isEn ? "Welding the titanium plates! This module will look great!" : "Soldando as placas de titânio! Esse módulo vai ficar incrível!";
+      } else if (speaker.assignment?.type === 'research') {
+        text = isEn ? "Eureka! These lunar samples are revealing new secrets!" : "Eureka! Essas amostras lunares estão revelando segredos!";
+      } else if (speaker.assignment?.type === 'expedition') {
+        text = isEn ? "Rover telemetry nominal. Scanning craters for minerals!" : "Telemetria do Rover normal. Escaneando crateras por minérios!";
+      } 
+      // Prioridade 3: Comentários Gerais / Humor Espacial
+      else {
+        const casualPt = [
+          "A vista da Terra daqui de cima nunca perde a graça!",
+          "Saudades de comer um cuscuz quentinho com café...",
+          "Sistemas estáveis, Comandante! Prontos para a próxima ordem.",
+          "A gravidade lunar deixa até as caixas pesadas levinhas!"
+        ];
+        const casualEn = [
+          "The view of Earth from up here never gets old!",
+          "I miss eating warm galactic couscous with coffee...",
+          "Systems stable, Commander! Ready for your next order.",
+          "Lunar gravity makes even heavy cargo feel like feathers!"
+        ];
+        const list = isEn ? casualEn : casualPt;
+        text = list[Math.floor(Math.random() * list.length)];
+      }
+
+      const positions = [
+        'bottom-[38%] left-[32%]',
+        'bottom-[42%] left-[52%]',
+        'bottom-[35%] left-[60%]',
+        'bottom-[30%] left-[40%]'
+      ];
+
+      setChatter({
+        name: speaker.name,
+        role: speaker.role,
+        text,
+        pos: positions[Math.floor(Math.random() * positions.length)]
+      });
+
+      setTimeout(() => setChatter(null), 5500);
+    }, 9000);
+
+    return () => clearInterval(interval);
+  }, [store.isPaused, store.isTrainingMode, store.indicators, store.crew, isEn]);
+
+  return (
+    <AnimatePresence>
+      {chatter && (
+        <motion.div
+          initial={{ opacity: 0, y: 15, scale: 0.9 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -10, scale: 0.9 }}
+          className={`absolute ${chatter.pos} z-30 max-w-[230px] pointer-events-none`}
+        >
+          <div className="bg-slate-900/95 backdrop-blur-md border border-cyan-400/60 rounded-2xl rounded-bl-none p-3 shadow-[0_0_25px_rgba(34,211,238,0.25)]">
+            <div className="flex items-center gap-1.5 mb-1">
+              <MessageSquare size={10} className="text-cyan-400" />
+              <span className="text-[9px] font-black text-cyan-300 uppercase tracking-wider">{chatter.name}</span>
+            </div>
+            <p className="text-[10px] text-white font-medium leading-snug italic">"{chatter.text}"</p>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
 }
 
 // ==========================================
@@ -18,6 +115,7 @@ function FloatingAstronaut() {
   const boostTimeoutRef = useRef<number | null>(null);
 
   function activateBoost() {
+    sfx.playThruster(); // <-- Barulho de jato propulsor a gás/plasma!
     setClicks(prev => prev + 1);
     setBoost(true);
     if (boostTimeoutRef.current !== null) {
@@ -173,11 +271,7 @@ function MeteorShowerAmbient() {
   );
 }
 
-// ==========================================
-// RENDERIZADOR DE ESTRUTURAS EVOLUTIVAS
-// ==========================================
 function getEvolutionStyles(level: number) {
-  // Aumenta o tamanho e intensifica o brilho consoante o nível
   const scale = level === 3 ? 1.4 : level === 2 ? 1.2 : 1.0;
   const glow = level === 3 ? 'drop-shadow-[0_0_25px_rgba(255,255,255,0.6)]' 
              : level === 2 ? 'drop-shadow-[0_0_15px_rgba(255,255,255,0.4)]' 
@@ -198,7 +292,6 @@ export function ColonyMap({ lumiMessage, selectedNode, onSelectNode }: ColonyMap
   return (
     <div className="absolute inset-0 bg-gradient-to-b from-[#010409] via-[#05101f] to-[#0f172a] overflow-hidden">
       
-      {/* ESPAÇO PROFUNDO E ESTRELAS */}
       <div className="absolute inset-0 pointer-events-none">
         {Array.from({ length: 50 }).map((_, i) => (
           <div key={`star-${i}`} className="absolute bg-white rounded-full opacity-60"
@@ -208,8 +301,8 @@ export function ColonyMap({ lumiMessage, selectedNode, onSelectNode }: ColonyMap
       
       <MeteorShowerAmbient />
       <FloatingAstronaut />
+      <CrewSpeechBubble />
 
-      {/* PLANETA TERRA */}
       <div className="absolute top-[8%] left-[10%] w-24 h-24 md:w-32 md:h-32 rounded-full animate-[pulse_10s_infinite_alternate] pointer-events-none">
         <img src="/earth.png" alt="Planeta Terra" className="w-full h-full object-cover drop-shadow-[0_0_40px_rgba(59,130,246,0.5)] opacity-90" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
       </div>
@@ -219,7 +312,6 @@ export function ColonyMap({ lumiMessage, selectedNode, onSelectNode }: ColonyMap
         <path d="M0,100 L0,70 Q15,40 35,70 T65,50 T90,80 L100,60 L100,100 Z" fill="#0f172a" />
       </svg>
 
-      {/* CHÃO LUNAR CRATERADO */}
       <div className="absolute bottom-0 w-full h-[45%] overflow-hidden bg-gradient-to-b from-[#081020] via-[#050b14] to-black border-t-2 border-cyan-900/30 shadow-[inset_0_20px_50px_rgba(0,0,0,0.8)]">
         <div className="absolute top-0 w-full h-10 bg-gradient-to-b from-cyan-500/10 to-transparent" />
         <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'linear-gradient(rgba(34, 211, 238, 0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(34, 211, 238, 0.3) 1px, transparent 1px)', backgroundSize: '80px 80px', transform: 'perspective(600px) rotateX(70deg)', transformOrigin: 'top center' }} />
@@ -249,28 +341,25 @@ export function ColonyMap({ lumiMessage, selectedNode, onSelectNode }: ColonyMap
         </svg>
       </div>
 
-      {/* MÓDULOS COM EVOLUÇÃO VISUAL (MAP NODES) */}
-      <MapNode id="habitat" level={getModuleLevel('habitat')} pos="bottom-[25%] left-[45%]" isBuilt={isBuilt('habitat')} isWip={isWIP('habitat')} progress={getModuleProgress('habitat')} isSelected={selectedNode === 'habitat'} onSelect={() => onSelectNode('habitat', 'construcao')}>
+      <MapNode id="habitat" level={getModuleLevel('habitat')} pos="bottom-[25%] left-[45%]" isBuilt={isBuilt('habitat')} isWip={isWIP('habitat')} progress={getModuleProgress('habitat')} isSelected={selectedNode === 'habitat'} onSelect={() => { sfx.playClick(); onSelectNode('habitat', 'construcao'); }}>
         <svg width="100" height="60" viewBox="0 0 100 60" className={getEvolutionStyles(getModuleLevel('habitat')).glow} style={{ transform: `scale(${getEvolutionStyles(getModuleLevel('habitat')).scale})`, transition: 'transform 0.5s' }}>
           <path d="M 10 60 Q 10 10 50 10 Q 90 10 90 60 Z" fill="#083344" stroke="#06b6d4" strokeWidth="2"/>
           <path d="M 20 60 Q 20 20 50 20 Q 80 20 80 60 Z" fill="#164e63" opacity="0.7"/>
           <rect x="40" y="40" width="20" height="20" fill="#020617" stroke="#22d3ee" strokeWidth="1"/>
-          {/* Detalhes Extra no Nível 2 e 3 */}
           {getModuleLevel('habitat') >= 2 && <circle cx="50" cy="20" r="4" fill="#22d3ee" />}
           {getModuleLevel('habitat') === 3 && <rect x="30" y="45" width="40" height="2" fill="#22d3ee" />}
         </svg>
       </MapNode>
 
-      <MapNode id="purifier" level={getModuleLevel('purifier')} pos="bottom-[33%] left-[63%]" isBuilt={isBuilt('purifier')} isWip={isWIP('purifier')} progress={getModuleProgress('purifier')} isSelected={selectedNode === 'purifier'} onSelect={() => onSelectNode('purifier', 'construcao')}>
+      <MapNode id="purifier" level={getModuleLevel('purifier')} pos="bottom-[33%] left-[63%]" isBuilt={isBuilt('purifier')} isWip={isWIP('purifier')} progress={getModuleProgress('purifier')} isSelected={selectedNode === 'purifier'} onSelect={() => { sfx.playClick(); onSelectNode('purifier', 'construcao'); }}>
         <svg width="60" height="80" viewBox="0 0 60 80" className={getEvolutionStyles(getModuleLevel('purifier')).glow} style={{ transform: `scale(${getEvolutionStyles(getModuleLevel('purifier')).scale})`, transition: 'transform 0.5s' }}>
           <rect x="10" y="20" width="15" height="60" rx="5" fill="#1e3a8a" stroke="#3b82f6" strokeWidth="2"/>
           <rect x="30" y="10" width="20" height="70" rx="5" fill="#1e3a8a" stroke="#3b82f6" strokeWidth="2"/>
-          {/* Tubagens extra no Nível 3 */}
           {getModuleLevel('purifier') === 3 && <path d="M 25 50 L 30 50" stroke="#3b82f6" strokeWidth="3" />}
         </svg>
       </MapNode>
 
-      <MapNode id="greenhouse" level={getModuleLevel('greenhouse')} pos="bottom-[18%] left-[66%]" isBuilt={isBuilt('greenhouse')} isWip={isWIP('greenhouse')} progress={getModuleProgress('greenhouse')} isSelected={selectedNode === 'greenhouse'} onSelect={() => onSelectNode('greenhouse', 'construcao')}>
+      <MapNode id="greenhouse" level={getModuleLevel('greenhouse')} pos="bottom-[18%] left-[66%]" isBuilt={isBuilt('greenhouse')} isWip={isWIP('greenhouse')} progress={getModuleProgress('greenhouse')} isSelected={selectedNode === 'greenhouse'} onSelect={() => { sfx.playClick(); onSelectNode('greenhouse', 'construcao'); }}>
         <svg width="90" height="50" viewBox="0 0 90 50" className={getEvolutionStyles(getModuleLevel('greenhouse')).glow} style={{ transform: `scale(${getEvolutionStyles(getModuleLevel('greenhouse')).scale})`, transition: 'transform 0.5s' }}>
           <path d="M 5 50 Q 5 5 45 5 Q 85 5 85 50 Z" fill="#064e3b" stroke="#10b981" strokeWidth="2" opacity="0.8"/>
           <path d="M 20 50 C 20 30, 30 20, 45 40 C 60 20, 70 30, 70 50 Z" fill="#10b981"/>
@@ -278,16 +367,15 @@ export function ColonyMap({ lumiMessage, selectedNode, onSelectNode }: ColonyMap
         </svg>
       </MapNode>
 
-      <MapNode id="solar" level={getModuleLevel('solar')} pos="bottom-[26%] left-[28%]" isBuilt={isBuilt('solar')} isWip={isWIP('solar')} progress={getModuleProgress('solar')} isSelected={selectedNode === 'solar'} onSelect={() => onSelectNode('solar', 'construcao')}>
+      <MapNode id="solar" level={getModuleLevel('solar')} pos="bottom-[26%] left-[28%]" isBuilt={isBuilt('solar')} isWip={isWIP('solar')} progress={getModuleProgress('solar')} isSelected={selectedNode === 'solar'} onSelect={() => { sfx.playClick(); onSelectNode('solar', 'construcao'); }}>
         <svg width="80" height="50" viewBox="0 0 80 50" className={getEvolutionStyles(getModuleLevel('solar')).glow} style={{ transform: `scale(${getEvolutionStyles(getModuleLevel('solar')).scale})`, transition: 'transform 0.5s' }}>
           <polygon points="10,50 30,10 45,10 25,50" fill="#1e3a8a" stroke="#60a5fa" strokeWidth="1"/>
           <polygon points="40,50 60,10 75,10 55,50" fill="#1e3a8a" stroke="#60a5fa" strokeWidth="1"/>
-          {/* Painel extra no Nível 3 */}
           {getModuleLevel('solar') === 3 && <polygon points="70,50 90,10 105,10 85,50" fill="#1e3a8a" stroke="#60a5fa" strokeWidth="1"/>}
         </svg>
       </MapNode>
 
-      <MapNode id="medical" level={getModuleLevel('medical')} pos="bottom-[32%] left-[38%]" isBuilt={isBuilt('medical')} isWip={isWIP('medical')} progress={getModuleProgress('medical')} isSelected={selectedNode === 'medical'} onSelect={() => onSelectNode('medical', 'construcao')}>
+      <MapNode id="medical" level={getModuleLevel('medical')} pos="bottom-[32%] left-[38%]" isBuilt={isBuilt('medical')} isWip={isWIP('medical')} progress={getModuleProgress('medical')} isSelected={selectedNode === 'medical'} onSelect={() => { sfx.playClick(); onSelectNode('medical', 'construcao'); }}>
         <svg width="70" height="40" viewBox="0 0 70 40" className={getEvolutionStyles(getModuleLevel('medical')).glow} style={{ transform: `scale(${getEvolutionStyles(getModuleLevel('medical')).scale})`, transition: 'transform 0.5s' }}>
           <rect x="5" y="5" width="60" height="35" rx="5" fill="#e2e8f0" stroke="#94a3b8" strokeWidth="2"/>
           <rect x="30" y="15" width="10" height="15" fill="#ef4444"/>
@@ -295,7 +383,7 @@ export function ColonyMap({ lumiMessage, selectedNode, onSelectNode }: ColonyMap
         </svg>
       </MapNode>
 
-      <MapNode id="dormitory" level={getModuleLevel('dormitory')} pos="bottom-[20%] left-[30%]" isBuilt={isBuilt('dormitory')} isWip={isWIP('dormitory')} progress={getModuleProgress('dormitory')} isSelected={selectedNode === 'dormitory'} onSelect={() => onSelectNode('dormitory', 'construcao')}>
+      <MapNode id="dormitory" level={getModuleLevel('dormitory')} pos="bottom-[20%] left-[30%]" isBuilt={isBuilt('dormitory')} isWip={isWIP('dormitory')} progress={getModuleProgress('dormitory')} isSelected={selectedNode === 'dormitory'} onSelect={() => { sfx.playClick(); onSelectNode('dormitory', 'construcao'); }}>
         <svg width="100" height="30" viewBox="0 0 100 30" className={getEvolutionStyles(getModuleLevel('dormitory')).glow} style={{ transform: `scale(${getEvolutionStyles(getModuleLevel('dormitory')).scale})`, transition: 'transform 0.5s' }}>
           <rect x="5" y="5" width="90" height="25" rx="10" fill="#312e81" stroke="#6366f1" strokeWidth="2"/>
           <circle cx="20" cy="17" r="5" fill="#818cf8"/>
@@ -305,7 +393,6 @@ export function ColonyMap({ lumiMessage, selectedNode, onSelectNode }: ColonyMap
         </svg>
       </MapNode>
 
-      {/* ESCUDO (Aumenta opacidade e cor consoante o nível) */}
       {hasShield && (
         <div 
           className={`absolute bottom-[10%] left-[20%] w-[60%] h-[70%] pointer-events-none rounded-t-full border-t-[3px] backdrop-blur-[1px] transition-all z-10 
@@ -315,11 +402,10 @@ export function ColonyMap({ lumiMessage, selectedNode, onSelectNode }: ColonyMap
         />
       )}
 
-      {/* EXPEDIÇÃO / ROVER */}
       <AnimatePresence>
         {store.activeExpedition && store.activeExpedition.status !== 'evento' && (
           <motion.div 
-            onClick={() => onSelectNode(store.activeExpedition!.id, 'exploracao')}
+            onClick={() => { sfx.playClick(); onSelectNode(store.activeExpedition!.id, 'exploracao'); }}
             initial={{ x: 200, opacity: 0 }} 
             animate={{ x: store.activeExpedition.status === 'ida' ? -150 : 200, opacity: 1 }} 
             transition={{ duration: 15, repeat: Infinity, ease: 'linear' }} 
@@ -327,7 +413,7 @@ export function ColonyMap({ lumiMessage, selectedNode, onSelectNode }: ColonyMap
           >
              <div className="relative flex flex-col items-center justify-center">
                <span className="absolute -top-6 text-[8px] bg-[#0c1424]/90 px-2.5 py-0.5 rounded-md text-orange-400 font-black whitespace-nowrap tracking-wider border border-orange-600/50 shadow-lg z-20">
-                 {store.activeExpedition.status === 'ida' ? 'ROVER EXPLORANDO...' : 'ROVER RETORNANDO...'}
+                 {store.activeExpedition.status === 'ida' ? (store.language === 'en' ? 'ROVER EXPLORING...' : 'ROVER EXPLORANDO...') : (store.language === 'en' ? 'ROVER RETURNING...' : 'ROVER RETORNANDO...')}
                </span>
                <img 
                  src="/craft_miner.png" 
@@ -340,7 +426,6 @@ export function ColonyMap({ lumiMessage, selectedNode, onSelectNode }: ColonyMap
         )}
       </AnimatePresence>
 
-      {/* MENSAGEM CURTA DA L.U.M.I. */}
       {store.tutorialStep === 'COMPLETED' && lumiMessage && (
         <div className="absolute bottom-6 left-6 z-40 max-w-[240px] pointer-events-none">
           <motion.div 
@@ -362,9 +447,6 @@ export function ColonyMap({ lumiMessage, selectedNode, onSelectNode }: ColonyMap
   );
 }
 
-// ==========================================
-// COMPONENTE DE NÓ DO MAPA COM NIVELAMENTO
-// ==========================================
 function MapNode({ children, id, pos, isBuilt, isWip, progress, isSelected, level, onSelect }: { children: ReactNode, id: string, pos: string, isBuilt: boolean, isWip: boolean, progress: number, isSelected: boolean, level: number, onSelect: () => void }) {
   const store = useGameStore();
   const assigned = store.crew.find(c => c.assignment?.targetId === id);
@@ -372,7 +454,6 @@ function MapNode({ children, id, pos, isBuilt, isWip, progress, isSelected, leve
 
   return (
     <div onClick={onSelect} className={`absolute ${pos} flex flex-col items-center justify-end group z-10 cursor-pointer transition-all ${isSelected ? 'drop-shadow-[0_0_25px_#22d3ee]' : 'hover:scale-105'}`}>
-      
       {isUnbuilt ? (
         <div className="w-16 h-8 bg-cyan-950/20 border-2 border-dashed border-cyan-900/50 rounded-full flex items-center justify-center opacity-40 group-hover:opacity-80 transition-opacity">
           <div className="w-4 h-1.5 rounded-full bg-cyan-900/50" />
@@ -393,13 +474,11 @@ function MapNode({ children, id, pos, isBuilt, isWip, progress, isSelected, leve
       ) : (
         <div className="relative flex flex-col items-center">
           {children}
-          {/* Mostra uma pequena insígnia de nível se for > 1 */}
           {level > 1 && (
              <span className="absolute -bottom-3 text-[7px] font-black bg-cyan-900 text-cyan-100 px-1.5 py-0.5 rounded-full shadow-lg border border-cyan-700">
                Lvl {level}
              </span>
           )}
-          {assigned && <span className="absolute -top-2 -right-2 text-emerald-400 bg-emerald-950 p-1 rounded-full animate-bounce z-20"><Target size={10}/></span>}
         </div>
       )}
     </div>

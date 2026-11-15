@@ -56,6 +56,10 @@ export interface GameState {
   scoopLevel: number;
   turretLevel: number;
   
+  // === ESTADOS DO DIÁRIO DE BORDO ===
+  unlockedEvents: string[];
+  unlockEvent: (eventId: string) => void;
+  
   updateIndicator: (type: keyof BaseIndicators, amount: number) => void;
   upgradeEquipment: (equipment: string, cost: Partial<Inventory>) => void;
   
@@ -119,6 +123,12 @@ export const useGameStore = create<GameState>()(
       
       laserLevel: 1, radarLevel: 1, droneLevel: 0, cargoLevel: 1, shieldLevel: 0, 
       engineLevel: 1, armorLevel: 0, coreLevel: 1, scoopLevel: 0, turretLevel: 0,
+
+      // === FUNÇÕES DO DIÁRIO DE BORDO ===
+      unlockedEvents: [],
+      unlockEvent: (eventId) => set(s => ({
+        unlockedEvents: s.unlockedEvents.includes(eventId) ? s.unlockedEvents : [...s.unlockedEvents, eventId]
+      })),
 
       updateIndicator: (type, amount) => set(s => ({
         indicators: { ...s.indicators, [type]: Math.min(100, Math.max(0, s.indicators[type] + amount)) }
@@ -327,7 +337,9 @@ export const useGameStore = create<GameState>()(
 
         const nextState = { ...s };
         const speedMultiplier = s.simSpeed * 2;
+        const isEn = s.language === 'en';
         
+        // 1. RELÓGIO
         let newM = s.clock.m + speedMultiplier;
         let newH = s.clock.h;
         let newDay = s.clock.day;
@@ -341,9 +353,10 @@ export const useGameStore = create<GameState>()(
         }
         nextState.clock = { h: newH, m: newM, day: newDay };
 
+        // 2. CONSTRUÇÕES
         if (s.buildingModules.length > 0) {
           nextState.buildingModules = s.buildingModules.map(mod => {
-            const hasEngineer = s.crew.some(c => c.assignment?.targetId === mod.id && c.role === 'Engenheiro');
+            const hasEngineer = nextState.crew.some(c => c.assignment?.targetId === mod.id && c.role === 'Engenheiro');
             let buildSpeed = hasEngineer ? speedMultiplier * 1.5 : speedMultiplier;
             if (s.isTrainingMode) buildSpeed *= 15; 
             return { ...mod, progress: Math.min(100, mod.progress + buildSpeed) };
@@ -358,17 +371,18 @@ export const useGameStore = create<GameState>()(
               nextState.notifications = [...nextState.notifications, {
                 id: Date.now().toString() + Math.random(),
                 type: 'success',
-                title: 'CONSTRUÇÃO FINALIZADA',
-                message: `Novo módulo construído com sucesso!`
+                title: isEn ? 'CONSTRUCTION FINISHED' : 'CONSTRUÇÃO FINALIZADA',
+                message: isEn ? 'New module successfully built!' : 'Novo módulo construído com sucesso!'
               }];
             });
             nextState.buildingModules = nextState.buildingModules.filter(m => m.progress < 100);
           }
         }
 
+        // 3. UPGRADES
         if (s.upgradingModules.length > 0) {
           nextState.upgradingModules = s.upgradingModules.map(mod => {
-            const hasEngineer = s.crew.some(c => c.assignment?.targetId === mod.id && c.role === 'Engenheiro');
+            const hasEngineer = nextState.crew.some(c => c.assignment?.targetId === mod.id && c.role === 'Engenheiro');
             let buildSpeed = hasEngineer ? speedMultiplier * 1.5 : speedMultiplier;
             if (s.isTrainingMode) buildSpeed *= 15;
             return { ...mod, progress: Math.min(100, mod.progress + buildSpeed) };
@@ -382,17 +396,18 @@ export const useGameStore = create<GameState>()(
               nextState.notifications = [...nextState.notifications, {
                 id: Date.now().toString() + Math.random(),
                 type: 'success',
-                title: 'MELHORIA FINALIZADA',
-                message: `O módulo foi aprimorado com sucesso!`
+                title: isEn ? 'UPGRADE FINISHED' : 'MELHORIA FINALIZADA',
+                message: isEn ? 'Module successfully upgraded!' : 'O módulo foi aprimorado com sucesso!'
               }];
             });
             nextState.upgradingModules = nextState.upgradingModules.filter(m => m.progress < 100);
           }
         }
 
+        // 4. PESQUISAS
         if (s.activeResearch) {
           const res = s.activeResearch;
-          const hasBio = s.crew.some(c => c.assignment?.targetId === res.id && c.role === 'Astrobiólogo');
+          const hasBio = nextState.crew.some(c => c.assignment?.targetId === res.id && c.role === 'Astrobiólogo');
           let resSpeed = hasBio ? speedMultiplier * 1.5 : speedMultiplier;
           if (s.isTrainingMode) resSpeed *= 15;
           
@@ -406,17 +421,18 @@ export const useGameStore = create<GameState>()(
             nextState.notifications = [...nextState.notifications, {
               id: Date.now().toString() + Math.random(),
               type: 'info',
-              title: 'PESQUISA CONCLUÍDA',
-              message: `Nova tecnologia desbloqueada!`
+              title: isEn ? 'RESEARCH COMPLETED' : 'PESQUISA CONCLUÍDA',
+              message: isEn ? 'New technology unlocked!' : 'Nova tecnologia desbloqueada!'
             }];
           } else {
             nextState.activeResearch = { ...res, progress: newProg };
           }
         }
 
+        // 5. EXPEDIÇÕES (ROVER)
         if (s.activeExpedition && s.activeExpedition.status !== 'evento') {
           const exp = s.activeExpedition;
-          const hasCmd = s.crew.some(c => c.assignment?.targetId === exp.id && (c.role === 'Comandante' || c.role === 'Astrobiólogo'));
+          const hasCmd = nextState.crew.some(c => c.assignment?.targetId === exp.id && (c.role === 'Comandante' || c.role === 'Astrobiólogo'));
           let expSpeed = hasCmd ? speedMultiplier * 1.5 : speedMultiplier;
           if (s.isTrainingMode) expSpeed *= 15; 
           
@@ -425,6 +441,10 @@ export const useGameStore = create<GameState>()(
           
           if (newProg >= 100) {
              const rew = exp.expData?.reward || {};
+             const expName = typeof exp.expData?.name === 'object' 
+               ? exp.expData.name[isEn ? 'en' : 'pt'] 
+               : (exp.expData?.name || (isEn ? 'its mission' : 'sua missão'));
+
              nextState.inventory = {
                regolith: nextState.inventory.regolith + (rew.regolith || 0),
                ice: nextState.inventory.ice + (rew.ice || 0),
@@ -433,8 +453,8 @@ export const useGameStore = create<GameState>()(
              nextState.notifications = [...nextState.notifications, {
                id: Date.now().toString() + Math.random(),
                type: 'success',
-               title: 'MISSÃO CONCLUÍDA',
-               message: `O rover regressou de ${exp.expData?.name || 'sua missão'}!`,
+               title: isEn ? 'MISSION COMPLETED' : 'MISSÃO CONCLUÍDA',
+               message: isEn ? `The rover returned from ${expName}!` : `O rover regressou de ${expName}!`,
                rewards: rew
              }];
              nextState.activeExpedition = null;
@@ -445,13 +465,28 @@ export const useGameStore = create<GameState>()(
           }
         }
 
-        // 6. MOTOR DE SOBREVIVÊNCIA E FADIGA
+        // ===============================================================
+        // 5.5 LIMPEZA AUTOMÁTICA DE MISSÕES FANTASMAS (GARBAGE COLLECTOR)
+        // ===============================================================
+        nextState.crew = nextState.crew.map(c => {
+          if (!c.assignment) return c;
+          const { type, targetId } = c.assignment;
+          const isStillActive =
+            (type === 'building' && nextState.buildingModules.some(m => m.id === targetId)) ||
+            (type === 'upgrade' && nextState.upgradingModules.some(m => m.id === targetId)) ||
+            (type === 'research' && nextState.activeResearch?.id === targetId) ||
+            (type === 'expedition' && nextState.activeExpedition?.id === targetId);
+
+          return isStillActive ? c : { ...c, assignment: null };
+        });
+
+        // 6. MOTOR DE SOBREVIVÊNCIA E FADIGA (Lê nextState.crew em vez de s.crew!)
         if (!s.isTrainingMode) {
           const baseConsumption = (speedMultiplier * 0.1);
-          const o2Regen = (s.moduleLevels['habitat'] || 0) * 0.15;
-          const waterRegen = (s.moduleLevels['purifier'] || 0) * 0.15;
-          const foodRegen = (s.moduleLevels['greenhouse'] || 0) * 0.15;
-          const energyRegen = (s.moduleLevels['solar'] || 0) * 0.15;
+          const o2Regen = (nextState.moduleLevels['habitat'] || 0) * 0.15;
+          const waterRegen = (nextState.moduleLevels['purifier'] || 0) * 0.15;
+          const foodRegen = (nextState.moduleLevels['greenhouse'] || 0) * 0.15;
+          const energyRegen = (nextState.moduleLevels['solar'] || 0) * 0.15;
 
           nextState.indicators = {
             o2: Math.max(0, Math.min(100, s.indicators.o2 - baseConsumption + o2Regen)),
@@ -463,7 +498,7 @@ export const useGameStore = create<GameState>()(
 
           const isSuffocatingOrStarving = nextState.indicators.o2 <= 0 || nextState.indicators.water <= 0 || nextState.indicators.food <= 0;
 
-          nextState.crew = s.crew.map(c => {
+          nextState.crew = nextState.crew.map(c => {
             let newEnergy = c.energy;
             let newHealth = c.health;
             let newStatus = c.status;
@@ -474,8 +509,8 @@ export const useGameStore = create<GameState>()(
               if (newEnergy > 20) newStatus = 'descansando';
             } 
             else if (c.status === 'descansando') {
-              const dormLevel = s.moduleLevels['dormitory'] || 0;
-              const medLevel = s.moduleLevels['medical'] || 0;
+              const dormLevel = nextState.moduleLevels['dormitory'] || 0;
+              const medLevel = nextState.moduleLevels['medical'] || 0;
               
               const energyRecovery = 0.1 + (dormLevel * 0.15); 
               newEnergy = Math.min(100, c.energy + (speedMultiplier * energyRecovery));
@@ -509,8 +544,22 @@ export const useGameStore = create<GameState>()(
             return { ...c, energy: newEnergy, health: newHealth, status: newStatus, assignment: newAssignment };
           });
           
+          // CONDIÇÃO DE DERROTA: Se toda a tripulação desmaiar
           if (nextState.crew.every(c => c.status === 'incapacitado' || c.health <= 0)) {
             nextState.missionStatus = 'derrota';
+            nextState.isPaused = true;
+          }
+
+          // ===============================================================
+          // 7. CONDIÇÃO DE VITÓRIA (COLÔNIA AUTOSSUSTENTÁVEL)
+          // ===============================================================
+          const isHabitatMax = (nextState.moduleLevels['habitat'] || 0) >= 3;
+          const isPurifierMax = (nextState.moduleLevels['purifier'] || 0) >= 3;
+          const isGreenhouseMax = (nextState.moduleLevels['greenhouse'] || 0) >= 3;
+          const allResearched = nextState.research.length >= 4;
+
+          if (isHabitatMax && isPurifierMax && isGreenhouseMax && allResearched) {
+            nextState.missionStatus = 'vitoria';
             nextState.isPaused = true;
           }
         }

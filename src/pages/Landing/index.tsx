@@ -2,6 +2,76 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 // ==========================================
+// DICIONÁRIO DE TRADUÇÕES (PT / EN)
+// ==========================================
+const DICTIONARY = {
+  pt: {
+    navHome: "Home",
+    navHowToPlay: "Como Jogar",
+    preparing: "PREPARANDO MISSÃO...",
+    subtitle: "Construa • Administre • Sobreviva na Lua",
+    playBtn: "JOGAR",
+    startMission: "INICIAR MISSÃO",
+    mobileDesc: "Explore o espaço, aprenda coisas novas e construa um amanhã melhor com Astro Mission!",
+    footer: "© Astro Mission • Explore o Universo",
+    lumiTransm: "LUMI • transmissão recebida",
+    lumiSpeech: "Olá, astronauta! Me chamo LUMI. Você está pronto pra sua nova jornada?",
+    modalGuide: "Astro Mission • Guia rápido",
+    modalEssent: "O ESSENCIAL PARA COMEÇAR",
+    modalYourMission: "Sua missão",
+    modalHowTo: "Como",
+    modalHowToPlay: "jogar?",
+    modalObj: "Objetivo",
+    modalObjDesc: "Mantenha a base lunar funcionando por ",
+    modalObjDays: "7 dias",
+    modalObjEnd: ".",
+    modal3Things: "Faça 3 coisas",
+    modalSteps: "03 PASSOS",
+    step1Title: "Monitore os recursos",
+    step1Desc: "Cuide do oxigênio, da água, da energia e dos alimentos.",
+    step2Title: "Expanda a base",
+    step2Desc: "Use seus créditos para construir novos módulos.",
+    step3Title: "Ajude o LUMI",
+    step3Desc: "Responda aos desafios do robô durante a missão.",
+    modalLuck: "Boa sorte, astronauta!",
+    modalBtn: "Entendi • Iniciar missão ↗",
+  },
+  en: {
+    navHome: "Home",
+    navHowToPlay: "How to Play",
+    preparing: "PREPARING MISSION...",
+    subtitle: "Build • Manage • Survive on the Moon",
+    playBtn: "PLAY",
+    startMission: "START MISSION",
+    mobileDesc: "Explore space, learn new things and build a better tomorrow with Astro Mission!",
+    footer: "© Astro Mission • Explore the Universe",
+    lumiTransm: "LUMI • transmission received",
+    lumiSpeech: "Hello, astronaut! I'm LUMI. Are you ready for your new journey?",
+    modalGuide: "Astro Mission • Quick guide",
+    modalEssent: "THE ESSENTIALS TO START",
+    modalYourMission: "Your mission",
+    modalHowTo: "How to",
+    modalHowToPlay: "play?",
+    modalObj: "Objective",
+    modalObjDesc: "Keep the lunar base running for ",
+    modalObjDays: "7 days",
+    modalObjEnd: ".",
+    modal3Things: "Do 3 things",
+    modalSteps: "03 STEPS",
+    step1Title: "Monitor resources",
+    step1Desc: "Take care of oxygen, water, energy, and food supplies.",
+    step2Title: "Expand the base",
+    step2Desc: "Use your credits to build new modules and structures.",
+    step3Title: "Help LUMI",
+    step3Desc: "Respond to the robot's challenges during the mission.",
+    modalLuck: "Good luck, astronaut!",
+    modalBtn: "Got it • Start mission ↗",
+  }
+};
+
+type Lang = 'pt' | 'en';
+
+// ==========================================
 // COMPONENTES DE FUNDO E ESTRELAS
 // ==========================================
 const stars = [
@@ -29,13 +99,14 @@ function StarField() {
       {stars.map((star, index) => (
         <span
           key={index}
-          className={`absolute ${star.size} animate-pulse text-white`}
+          className={`absolute ${star.size} animate-pulse text-white transition-transform duration-300 ease-out`}
           style={{
             top: star.top,
             left: star.left,
             opacity: star.opacity,
             animationDelay: star.delay,
             textShadow: "0 0 12px rgba(255,255,255,.8)",
+            transform: `translate(calc(var(--mouse-x, 0) * 0.5px), calc(var(--mouse-y, 0) * 0.5px))`,
           }}
         >
           ✦
@@ -79,9 +150,9 @@ function MeteorShower() {
 }
 
 // ==========================================
-// TELA DE LOADING (METEOROS GIGANTES COM FOGO ATRÁS)
+// TELA DE LOADING (METEOROS GIGANTES)
 // ==========================================
-function BigMeteorsLoading({ isLoaded }: { isLoaded: boolean }) {
+function BigMeteorsLoading({ isLoaded, text }: { isLoaded: boolean, text: string }) {
   const [shouldRender, setShouldRender] = useState(true);
 
   useEffect(() => {
@@ -157,25 +228,21 @@ function BigMeteorsLoading({ isLoaded }: { isLoaded: boolean }) {
                 </filter>
               </defs>
 
-              {/* Fumaça e Cauda posicionadas ATRÁS da pedra (no lado direito da pedra SVG) */}
               <path d="M 120 100 Q 350 0 750 70 Q 850 100 750 130 Q 350 200 120 100 Z" fill={`url(#smoke-${m.type}-${i})`} filter={`url(#blur-heavy-${i})`} />
-              <path d="M 80 100 Q 300 30 650 90 Q 750 100 650 110 Q 300 170 80 100 Z" fill={`url(#tail-${m.type}-${i})`} filter={`url(#blur-heavy-${i})`} />
+              <path d="M 80 100 Q 300 30 650 90 Q 750 100 650 110 Q 300 170 80 100 Z" fill={`url(#trail-${m.type}-${i})`} filter={`url(#blur-heavy-${i})`} />
               <path d="M 60 100 Q 200 60 400 95 Q 450 100 400 105 Q 200 140 60 100 Z" fill="#ffffff" filter={`url(#blur-light-${i})`} opacity="0.9" />
-
-              {/* Fragmentos se soltando */}
+              
               <circle cx="200" cy="70" r="4" fill={m.type === 'fire' ? "#fde047" : "#7dd3fc"} filter={`url(#blur-light-${i})`} />
               <circle cx="300" cy="140" r="6" fill={m.type === 'fire' ? "#f97316" : "#0ea5e9"} filter={`url(#blur-light-${i})`} opacity="0.8" />
               <circle cx="450" cy="85" r="3" fill={m.type === 'fire' ? "#ef4444" : "#2563eb"} />
               <circle cx="550" cy="115" r="8" fill={m.type === 'fire' ? "#ea580c" : "#0284c7"} filter={`url(#blur-light-${i})`} opacity="0.6" />
               
-              {/* ROCHA NA PONTA ESQUERDA */}
               <g transform="translate(40, 55)">
                 <path d="M 0 45 C 5 15, 35 -5, 60 5 C 85 15, 100 5, 120 25 C 140 45, 125 75, 100 85 C 80 95, 95 120, 60 110 C 25 100, -5 75, 0 45 Z" fill={`url(#rock-grad-${i})`} />
                 <ellipse cx="40" cy="40" rx="10" ry="18" fill="#020617" opacity="0.7" transform="rotate(25 40 40)" />
                 <ellipse cx="80" cy="70" rx="16" ry="9" fill="#020617" opacity="0.6" transform="rotate(-15 80 70)" />
                 <ellipse cx="90" cy="35" rx="12" ry="18" fill="#020617" opacity="0.8" transform="rotate(40 90 35)" />
                 <path d="M 60 15 Q 80 30 100 25" fill="none" stroke="#1e293b" strokeWidth="4" strokeLinecap="round" opacity="0.6" />
-                {/* Escudo de Calor brilhando na frente da rocha */}
                 <path d="M -2 45 C 3 15, 30 0, 50 5" fill="none" stroke={m.type === 'fire' ? "#fef08a" : "#cffafe"} strokeWidth="8" filter={`url(#glow-rock-${i})`} opacity="0.9" />
                 <path d="M -2 45 C 3 15, 30 0, 50 5" fill="none" stroke="#ffffff" strokeWidth="3" />
               </g>
@@ -186,7 +253,7 @@ function BigMeteorsLoading({ isLoaded }: { isLoaded: boolean }) {
       
       <div role="status" aria-live="polite" className="absolute z-10 text-center animate-pulse rounded-2xl bg-black/40 px-8 py-4 backdrop-blur-sm border border-white/10">
         <span className="text-2xl font-black italic tracking-[0.3em] text-white/80 drop-shadow-md">
-          PREPARANDO MISSÃO...
+          {text}
         </span>
       </div>
     </div>
@@ -248,7 +315,10 @@ function SpacePlanets() {
   return (
     <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-[3] overflow-hidden">
       {/* SATURNO */}
-      <div className="absolute -right-24 top-[12%] h-56 w-72 md:-right-20 md:top-[10%] md:h-64 md:w-80">
+      <div 
+        className="absolute -right-24 top-[12%] h-56 w-72 md:-right-20 md:top-[10%] md:h-64 md:w-80 transition-transform duration-300 ease-out"
+        style={{ transform: `translate(calc(var(--mouse-x, 0px) * -0.5), calc(var(--mouse-y, 0px) * -0.5))` }}
+      >
         <div className="absolute left-[-8%] top-1/2 h-24 w-[116%] -translate-y-1/2 rotate-[-20deg] rounded-[50%] border-[16px] border-[#173b91] bg-[#1e40af]/15 shadow-[0_0_24px_rgba(37,99,235,.32)] md:h-28 md:border-[19px]" />
         <div className="absolute left-[-4%] top-1/2 h-16 w-[108%] -translate-y-1/2 rotate-[-20deg] rounded-[50%] border-[5px] border-[#60a5fa]/75 md:h-20" />
         <div className="absolute right-[9%] top-1/2 h-44 w-44 -translate-y-1/2 overflow-hidden rounded-full border border-[#93c5fd]/40 bg-[radial-gradient(circle_at_33%_27%,#93c5fd_0%,#3b82f6_38%,#1e3a8a_72%,#071a44_100%)] shadow-[inset_-22px_-13px_30px_rgba(3,12,38,.55),0_0_45px_rgba(37,99,235,.32)] md:right-[10%] md:h-52 md:w-52">
@@ -262,7 +332,10 @@ function SpacePlanets() {
       </div>
 
       {/* LUA */}
-      <div className="absolute -bottom-40 -left-36 h-[390px] w-[390px] rounded-full border border-slate-200/20 bg-[radial-gradient(circle_at_34%_28%,#e5e7eb_0%,#aeb8c8_34%,#68758d_68%,#27334e_100%)] shadow-[inset_-36px_-28px_55px_rgba(8,15,36,.62),0_0_55px_rgba(148,163,184,.25)] md:-bottom-44 md:-left-32 md:h-[455px] md:w-[455px]">
+      <div 
+        className="absolute -bottom-40 -left-36 h-[390px] w-[390px] rounded-full border border-slate-200/20 bg-[radial-gradient(circle_at_34%_28%,#e5e7eb_0%,#aeb8c8_34%,#68758d_68%,#27334e_100%)] shadow-[inset_-36px_-28px_55px_rgba(8,15,36,.62),0_0_55px_rgba(148,163,184,.25)] md:-bottom-44 md:-left-32 md:h-[455px] md:w-[455px] transition-transform duration-300 ease-out"
+        style={{ transform: `translate(calc(var(--mouse-x, 0px) * 0.3), calc(var(--mouse-y, 0px) * 0.3))` }}
+      >
         <span className="absolute left-[28%] top-[23%] h-9 w-12 rounded-[50%] bg-slate-500/35 shadow-[inset_3px_3px_7px_rgba(15,23,42,.35),0_2px_2px_rgba(255,255,255,.12)]" />
         <span className="absolute left-[57%] top-[36%] h-6 w-9 rounded-[50%] bg-slate-600/35 shadow-[inset_2px_2px_5px_rgba(15,23,42,.4)]" />
         <span className="absolute left-[20%] top-[55%] h-8 w-11 rounded-[50%] bg-slate-600/35 shadow-[inset_3px_3px_6px_rgba(15,23,42,.4)]" />
@@ -275,36 +348,42 @@ function SpacePlanets() {
   );
 }
 
-function Spaceship() {
+function Spaceship({ isAppLoaded }: { isAppLoaded: boolean }) {
   return (
-    <div className="absolute left-[7%] top-[27%] z-[24] w-44 -rotate-[7deg] animate-[float_5s_ease-in-out_infinite] md:left-[10%] md:top-[26%] md:w-[290px]">
-      <svg viewBox="0 0 340 190" className="h-auto w-full drop-shadow-[0_10px_18px_rgba(0,0,0,.4)]">
-        <defs>
-          <linearGradient id="ship-body" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#fff" />
-            <stop offset="55%" stopColor="#dbeafe" />
-            <stop offset="100%" stopColor="#64748b" />
-          </linearGradient>
-          <linearGradient id="ship-flame" x1="100%" y1="0%" x2="0%" y2="0%">
-            <stop offset="0%" stopColor="#dbeafe" stopOpacity="0" />
-            <stop offset="55%" stopColor="#38bdf8" stopOpacity=".9" />
-            <stop offset="100%" stopColor="#2563eb" stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        <path d="M105 78 C65 47 29 47 0 70 C37 66 52 91 4 112 C55 108 79 119 112 101Z" fill="url(#ship-flame)" />
-        <path d="M111 83 C70 76 45 86 15 95" fill="none" stroke="#7dd3fc" strokeWidth="5" opacity=".8" />
-        <path d="M119 72 L78 22 Q72 13 87 18 L161 61Z" fill="#f97316" stroke="#24345b" strokeWidth="6" />
-        <path d="M122 111 L76 153 Q69 162 88 157 L165 119Z" fill="#f97316" stroke="#24345b" strokeWidth="6" />
-        <path d="M182 65 L172 27 L217 62Z" fill="#94a3b8" stroke="#24345b" strokeWidth="5" />
-        <path d="M72 94 C100 47 190 34 276 73 Q319 94 277 119 C194 158 108 140 72 94Z" fill="url(#ship-body)" stroke="#263b69" strokeWidth="7" />
-        <path d="M89 91 Q126 68 167 65" fill="none" stroke="#fff" strokeWidth="7" opacity=".9" />
-        <path d="M195 66 Q235 53 269 79 Q288 98 263 115 Q227 130 196 108 Q179 91 195 66Z" fill="#082344" stroke="#38bdf8" strokeWidth="6" />
-        <path d="M211 72 Q236 64 254 79" fill="none" stroke="#bae6fd" strokeWidth="6" strokeLinecap="round" opacity=".85" />
-        <circle cx="142" cy="96" r="15" fill="#2563eb" />
-        <ellipse cx="142" cy="96" rx="25" ry="7" fill="none" stroke="#173b91" strokeWidth="4" transform="rotate(-18 142 96)" />
-        <circle cx="142" cy="96" r="5" fill="#173b91" />
-        <path d="M76 80 L55 77 L52 111 L80 108Z" fill="#f97316" stroke="#24345b" strokeWidth="5" />
-      </svg>
+    <div className={`absolute left-[7%] top-[27%] z-[24] w-44 -rotate-[7deg] md:left-[10%] md:top-[26%] md:w-[290px] transition-all duration-1000 ease-out ${isAppLoaded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-20'}`}>
+      <div style={{ transform: `translate(calc(var(--mouse-x, 0px) * 0.8), calc(var(--mouse-y, 0px) * 0.8))` }} className="transition-transform duration-300 ease-out">
+        <div className="group relative animate-[float_5s_ease-in-out_infinite] hover:animate-none cursor-pointer">
+          <svg viewBox="0 0 340 190" className="h-auto w-full drop-shadow-[0_10px_18px_rgba(0,0,0,.4)] transition-transform duration-300 group-hover:-translate-y-2 group-hover:rotate-[-5deg]">
+            <defs>
+              <linearGradient id="ship-body" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#fff" />
+                <stop offset="55%" stopColor="#dbeafe" />
+                <stop offset="100%" stopColor="#64748b" />
+              </linearGradient>
+              <linearGradient id="ship-flame" x1="100%" y1="0%" x2="0%" y2="0%">
+                <stop offset="0%" stopColor="#dbeafe" stopOpacity="0" />
+                <stop offset="55%" stopColor="#38bdf8" stopOpacity=".9" />
+                <stop offset="100%" stopColor="#2563eb" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            <g className="transition-transform duration-300 origin-right group-hover:scale-x-150">
+              <path d="M105 78 C65 47 29 47 0 70 C37 66 52 91 4 112 C55 108 79 119 112 101Z" fill="url(#ship-flame)" />
+              <path d="M111 83 C70 76 45 86 15 95" fill="none" stroke="#7dd3fc" strokeWidth="5" opacity=".8" />
+            </g>
+            <path d="M119 72 L78 22 Q72 13 87 18 L161 61Z" fill="#f97316" stroke="#24345b" strokeWidth="6" />
+            <path d="M122 111 L76 153 Q69 162 88 157 L165 119Z" fill="#f97316" stroke="#24345b" strokeWidth="6" />
+            <path d="M182 65 L172 27 L217 62Z" fill="#94a3b8" stroke="#24345b" strokeWidth="5" />
+            <path d="M72 94 C100 47 190 34 276 73 Q319 94 277 119 C194 158 108 140 72 94Z" fill="url(#ship-body)" stroke="#263b69" strokeWidth="7" />
+            <path d="M89 91 Q126 68 167 65" fill="none" stroke="#fff" strokeWidth="7" opacity=".9" />
+            <path d="M195 66 Q235 53 269 79 Q288 98 263 115 Q227 130 196 108 Q179 91 195 66Z" fill="#082344" stroke="#38bdf8" strokeWidth="6" />
+            <path d="M211 72 Q236 64 254 79" fill="none" stroke="#bae6fd" strokeWidth="6" strokeLinecap="round" opacity=".85" />
+            <circle cx="142" cy="96" r="15" fill="#2563eb" />
+            <ellipse cx="142" cy="96" rx="25" ry="7" fill="none" stroke="#173b91" strokeWidth="4" transform="rotate(-18 142 96)" />
+            <circle cx="142" cy="96" r="5" fill="#173b91" />
+            <path d="M76 80 L55 77 L52 111 L80 108Z" fill="#f97316" stroke="#24345b" strokeWidth="5" />
+          </svg>
+        </div>
+      </div>
     </div>
   );
 }
@@ -335,84 +414,88 @@ function MoonSurface() {
   );
 }
 
-function LumiRobot({ isAppLoaded }: { isAppLoaded: boolean }) {
+function LumiRobot({ isAppLoaded, textTransm, textSpeech }: { isAppLoaded: boolean, textTransm: string, textSpeech: string }) {
   return (
-    <div className={`robot-container absolute bottom-[2%] right-[-3%] z-[35] w-[min(45vw,470px)] min-w-[270px] animate-[float_6s_ease-in-out_infinite] md:right-[3%] md:bottom-[2%] ${isAppLoaded ? "lumi-intro-wave" : ""}`}>
-      {isAppLoaded && (
-        <div
-          role="status"
-          className="lumi-speech absolute right-[3%] top-[-18%] z-20 w-[min(320px,82vw)] rounded-2xl border border-cyan-200/70 bg-[#071a3b]/95 px-4 py-3 text-center shadow-[0_0_30px_rgba(34,211,238,.32)] backdrop-blur-md sm:right-[8%] sm:top-[-20%] sm:px-5 sm:py-4"
-        >
-          <span className="mb-1 block text-[9px] font-black uppercase tracking-[.24em] text-cyan-300">LUMI • transmissão recebida</span>
-          <p className="text-xs font-semibold leading-relaxed text-white sm:text-sm">
-            Olá, astronauta! Me chamo LUMI. Você está pronto pra sua nova jornada?
-          </p>
-          <span aria-hidden="true" className="absolute -bottom-[9px] right-[22%] h-4 w-4 rotate-45 border-b border-r border-cyan-200/70 bg-[#071a3b]" />
-        </div>
-      )}
-      <svg viewBox="0 0 500 520" className="h-auto w-full overflow-visible drop-shadow-[0_15px_24px_rgba(5,8,35,.45)]">
-        <defs>
-          <linearGradient id="lumi-white" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#fff" />
-            <stop offset="65%" stopColor="#dbeafe" />
-            <stop offset="100%" stopColor="#8da9d5" />
-          </linearGradient>
-          <linearGradient id="lumi-blue" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#67e8f9" />
-            <stop offset="100%" stopColor="#2563eb" />
-          </linearGradient>
-        </defs>
-        <ellipse cx="280" cy="492" rx="190" ry="19" fill="#4b4380" opacity=".35" />
-        <path d="M226 356 Q195 390 168 427 Q147 455 173 475 Q204 496 247 472 L300 417Z" fill="url(#lumi-white)" stroke="#344568" strokeWidth="8" />
-        <path d="M326 354 Q354 388 376 425 Q395 456 367 478 Q336 497 294 473 L268 416Z" fill="url(#lumi-white)" stroke="#344568" strokeWidth="8" />
-        <path d="M174 449 Q202 441 226 460 L241 477 Q204 501 171 481 Q151 467 174 449Z" fill="#dbeafe" stroke="#344568" strokeWidth="7" />
-        <path d="M315 459 Q344 435 371 450 Q391 469 368 486 Q335 501 304 479Z" fill="#dbeafe" stroke="#344568" strokeWidth="7" />
-        <path d="M185 458 L207 484" stroke="#22d3ee" strokeWidth="10" strokeLinecap="round" />
-        <path d="M326 460 L350 485" stroke="#22d3ee" strokeWidth="10" strokeLinecap="round" />
-        <path d="M184 252 Q205 226 260 229 L343 246 Q378 264 375 323 L361 405 Q349 430 317 421 L213 409 Q182 396 180 365Z" fill="url(#lumi-white)" stroke="#344568" strokeWidth="9" />
-        <path d="M213 278 Q278 300 346 278" fill="none" stroke="#8cc5ef" strokeWidth="8" opacity=".85" />
-        <path d="M205 311 Q280 333 351 311" fill="none" stroke="#8cc5ef" strokeWidth="8" opacity=".85" />
-        <circle cx="286" cy="354" r="27" fill="#2563eb" />
-        <ellipse cx="286" cy="354" rx="44" ry="13" fill="none" stroke="#173b91" strokeWidth="5" transform="rotate(-18 286 354)" />
-        <circle cx="286" cy="354" r="7" fill="#173b91" />
-        <path d="M197 270 Q163 279 150 318 L137 352 Q134 373 155 379 Q174 383 185 361 L212 316Z" fill="url(#lumi-white)" stroke="#344568" strokeWidth="8" />
-        <circle cx="151" cy="369" r="19" fill="#dbeafe" stroke="#344568" strokeWidth="7" />
-        <g className="robot-arm-wave">
-          <path d="M355 273 Q391 281 399 321 L411 354 Q416 376 394 384 Q374 389 364 366 L340 316Z" fill="url(#lumi-white)" stroke="#344568" strokeWidth="8" />
-          <circle cx="398" cy="371" r="19" fill="#dbeafe" stroke="#344568" strokeWidth="7" />
-        </g>
-        <path d="M188 112 L168 52" stroke="#344568" strokeWidth="10" strokeLinecap="round" />
-        <circle cx="165" cy="45" r="15" fill="#22d3ee" stroke="#344568" strokeWidth="6" />
-        <path d="M377 112 L400 52" stroke="#344568" strokeWidth="10" strokeLinecap="round" />
-        <circle cx="404" cy="45" r="15" fill="#22d3ee" stroke="#344568" strokeWidth="6" />
-        <path d="M133 116 Q140 72 188 64 L355 67 Q406 78 419 130 L413 220 Q402 267 355 277 L190 271 Q139 260 128 219Z" fill="url(#lumi-white)" stroke="#344568" strokeWidth="10" />
-        <path d="M155 103 Q185 80 220 82" fill="none" stroke="#fff" strokeWidth="9" strokeLinecap="round" opacity=".9" />
-        <rect x="111" y="143" width="35" height="90" rx="16" fill="#93c5fd" stroke="#344568" strokeWidth="8" />
-        <rect x="402" y="143" width="35" height="90" rx="16" fill="#93c5fd" stroke="#344568" strokeWidth="8" />
-        <circle cx="423" cy="188" r="12" fill="url(#lumi-blue)" />
-        <circle cx="126" cy="188" r="12" fill="url(#lumi-blue)" />
-        <rect x="153" y="111" width="245" height="139" rx="53" fill="#07152e" stroke="#52658b" strokeWidth="7" />
-        <path d="M177 128 Q225 104 277 117" fill="none" stroke="#375078" strokeWidth="7" strokeLinecap="round" opacity=".55" />
-        <g className="lumi-eye">
-          <path d="M197 184 Q220 145 245 184" fill="none" stroke="#24d9ff" strokeWidth="15" strokeLinecap="round" />
-          <path d="M197 184 Q220 145 245 184" fill="none" stroke="#b9f5ff" strokeWidth="4" strokeLinecap="round" opacity=".8" />
-        </g>
-        <g className="lumi-eye">
-          <path d="M302 184 Q326 145 350 184" fill="none" stroke="#24d9ff" strokeWidth="15" strokeLinecap="round" />
-          <path d="M302 184 Q326 145 350 184" fill="none" stroke="#b9f5ff" strokeWidth="4" strokeLinecap="round" opacity=".8" />
-        </g>
-        <path d="M267 65 L267 52" stroke="#344568" strokeWidth="7" />
-        <circle cx="267" cy="45" r="9" fill="#173b91" />
-      </svg>
-      <div className="absolute bottom-[24%] left-[-9%] h-24 w-44 -rotate-[12deg] rounded-xl border-[3px] border-cyan-200 bg-cyan-400/20 shadow-[0_0_25px_rgba(34,211,238,.85)] backdrop-blur-sm md:h-28 md:w-52">
-        <div className="absolute inset-2 rounded-lg border border-cyan-200/70">
-          <div className="absolute left-1/2 top-1/2 h-11 w-11 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-cyan-100" />
-          <div className="absolute left-1/2 top-1/2 h-5 w-16 -translate-x-1/2 -translate-y-1/2 rotate-[-18deg] rounded-full border-2 border-cyan-100" />
-          <span className="absolute left-3 top-3 text-[9px] font-bold tracking-widest text-cyan-100">LUMI • MAP</span>
-          <span className="absolute bottom-2 right-3 text-[8px] text-cyan-100">MISSION 01</span>
+    <div className={`robot-container absolute bottom-[2%] right-[-3%] z-[35] w-[min(45vw,470px)] min-w-[270px] transition-all duration-1000 delay-300 ease-out md:right-[3%] md:bottom-[2%] ${isAppLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'}`}>
+      <div style={{ transform: `translate(calc(var(--mouse-x, 0px) * -0.4), calc(var(--mouse-y, 0px) * -0.4))` }} className="transition-transform duration-300 ease-out">
+        <div className={`animate-[float_6s_ease-in-out_infinite] ${isAppLoaded ? "lumi-intro-wave" : ""}`}>
+          {isAppLoaded && (
+            <div
+              role="status"
+              className="lumi-speech absolute right-[3%] top-[-18%] z-20 w-[min(320px,82vw)] rounded-2xl border border-cyan-200/70 bg-[#071a3b]/95 px-4 py-3 text-center shadow-[0_0_30px_rgba(34,211,238,.32)] backdrop-blur-md sm:right-[8%] sm:top-[-20%] sm:px-5 sm:py-4"
+            >
+              <span className="mb-1 block text-[9px] font-black uppercase tracking-[.24em] text-cyan-300">{textTransm}</span>
+              <p className="text-xs font-semibold leading-relaxed text-white sm:text-sm">
+                {textSpeech}
+              </p>
+              <span aria-hidden="true" className="absolute -bottom-[9px] right-[22%] h-4 w-4 rotate-45 border-b border-r border-cyan-200/70 bg-[#071a3b]" />
+            </div>
+          )}
+          <svg viewBox="0 0 500 520" className="h-auto w-full overflow-visible drop-shadow-[0_15px_24px_rgba(5,8,35,.45)]">
+            <defs>
+              <linearGradient id="lumi-white" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#fff" />
+                <stop offset="65%" stopColor="#dbeafe" />
+                <stop offset="100%" stopColor="#8da9d5" />
+              </linearGradient>
+              <linearGradient id="lumi-blue" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#67e8f9" />
+                <stop offset="100%" stopColor="#2563eb" />
+              </linearGradient>
+            </defs>
+            <ellipse cx="280" cy="492" rx="190" ry="19" fill="#4b4380" opacity=".35" />
+            <path d="M226 356 Q195 390 168 427 Q147 455 173 475 Q204 496 247 472 L300 417Z" fill="url(#lumi-white)" stroke="#344568" strokeWidth="8" />
+            <path d="M326 354 Q354 388 376 425 Q395 456 367 478 Q336 497 294 473 L268 416Z" fill="url(#lumi-white)" stroke="#344568" strokeWidth="8" />
+            <path d="M174 449 Q202 441 226 460 L241 477 Q204 501 171 481 Q151 467 174 449Z" fill="#dbeafe" stroke="#344568" strokeWidth="7" />
+            <path d="M315 459 Q344 435 371 450 Q391 469 368 486 Q335 501 304 479Z" fill="#dbeafe" stroke="#344568" strokeWidth="7" />
+            <path d="M185 458 L207 484" stroke="#22d3ee" strokeWidth="10" strokeLinecap="round" />
+            <path d="M326 460 L350 485" stroke="#22d3ee" strokeWidth="10" strokeLinecap="round" />
+            <path d="M184 252 Q205 226 260 229 L343 246 Q378 264 375 323 L361 405 Q349 430 317 421 L213 409 Q182 396 180 365Z" fill="url(#lumi-white)" stroke="#344568" strokeWidth="9" />
+            <path d="M213 278 Q278 300 346 278" fill="none" stroke="#8cc5ef" strokeWidth="8" opacity=".85" />
+            <path d="M205 311 Q280 333 351 311" fill="none" stroke="#8cc5ef" strokeWidth="8" opacity=".85" />
+            <circle cx="286" cy="354" r="27" fill="#2563eb" />
+            <ellipse cx="286" cy="354" rx="44" ry="13" fill="none" stroke="#173b91" strokeWidth="5" transform="rotate(-18 286 354)" />
+            <circle cx="286" cy="354" r="7" fill="#173b91" />
+            <path d="M197 270 Q163 279 150 318 L137 352 Q134 373 155 379 Q174 383 185 361 L212 316Z" fill="url(#lumi-white)" stroke="#344568" strokeWidth="8" />
+            <circle cx="151" cy="369" r="19" fill="#dbeafe" stroke="#344568" strokeWidth="7" />
+            <g className="robot-arm-wave">
+              <path d="M355 273 Q391 281 399 321 L411 354 Q416 376 394 384 Q374 389 364 366 L340 316Z" fill="url(#lumi-white)" stroke="#344568" strokeWidth="8" />
+              <circle cx="398" cy="371" r="19" fill="#dbeafe" stroke="#344568" strokeWidth="7" />
+            </g>
+            <path d="M188 112 L168 52" stroke="#344568" strokeWidth="10" strokeLinecap="round" />
+            <circle cx="165" cy="45" r="15" fill="#22d3ee" stroke="#344568" strokeWidth="6" />
+            <path d="M377 112 L400 52" stroke="#344568" strokeWidth="10" strokeLinecap="round" />
+            <circle cx="404" cy="45" r="15" fill="#22d3ee" stroke="#344568" strokeWidth="6" />
+            <path d="M133 116 Q140 72 188 64 L355 67 Q406 78 419 130 L413 220 Q402 267 355 277 L190 271 Q139 260 128 219Z" fill="url(#lumi-white)" stroke="#344568" strokeWidth="10" />
+            <path d="M155 103 Q185 80 220 82" fill="none" stroke="#fff" strokeWidth="9" strokeLinecap="round" opacity=".9" />
+            <rect x="111" y="143" width="35" height="90" rx="16" fill="#93c5fd" stroke="#344568" strokeWidth="8" />
+            <rect x="402" y="143" width="35" height="90" rx="16" fill="#93c5fd" stroke="#344568" strokeWidth="8" />
+            <circle cx="423" cy="188" r="12" fill="url(#lumi-blue)" />
+            <circle cx="126" cy="188" r="12" fill="url(#lumi-blue)" />
+            <rect x="153" y="111" width="245" height="139" rx="53" fill="#07152e" stroke="#52658b" strokeWidth="7" />
+            <path d="M177 128 Q225 104 277 117" fill="none" stroke="#375078" strokeWidth="7" strokeLinecap="round" opacity=".55" />
+            <g className="lumi-eye">
+              <path d="M197 184 Q220 145 245 184" fill="none" stroke="#24d9ff" strokeWidth="15" strokeLinecap="round" />
+              <path d="M197 184 Q220 145 245 184" fill="none" stroke="#b9f5ff" strokeWidth="4" strokeLinecap="round" opacity=".8" />
+            </g>
+            <g className="lumi-eye">
+              <path d="M302 184 Q326 145 350 184" fill="none" stroke="#24d9ff" strokeWidth="15" strokeLinecap="round" />
+              <path d="M302 184 Q326 145 350 184" fill="none" stroke="#b9f5ff" strokeWidth="4" strokeLinecap="round" opacity=".8" />
+            </g>
+            <path d="M267 65 L267 52" stroke="#344568" strokeWidth="7" />
+            <circle cx="267" cy="45" r="9" fill="#173b91" />
+          </svg>
+          <div className="absolute bottom-[24%] left-[-9%] h-24 w-44 -rotate-[12deg] rounded-xl border-[3px] border-cyan-200 bg-cyan-400/20 shadow-[0_0_25px_rgba(34,211,238,.85)] backdrop-blur-sm md:h-28 md:w-52">
+            <div className="absolute inset-2 rounded-lg border border-cyan-200/70">
+              <div className="absolute left-1/2 top-1/2 h-11 w-11 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-cyan-100" />
+              <div className="absolute left-1/2 top-1/2 h-5 w-16 -translate-x-1/2 -translate-y-1/2 rotate-[-18deg] rounded-full border-2 border-cyan-100" />
+              <span className="absolute left-3 top-3 text-[9px] font-bold tracking-widest text-cyan-100">LUMI • MAP</span>
+              <span className="absolute bottom-2 right-3 text-[8px] text-cyan-100 animate-pulse">SYNC OK</span>
+            </div>
+          </div>
+          <div className="absolute bottom-[19%] left-[-8%] h-14 w-48 rounded-full bg-cyan-300/35 blur-2xl" />
         </div>
       </div>
-      <div className="absolute bottom-[19%] left-[-8%] h-14 w-48 rounded-full bg-cyan-300/35 blur-2xl" />
     </div>
   );
 }
@@ -424,6 +507,9 @@ export default function AstroMissionLanding() {
   const navigate = useNavigate();
   const [showHowToPlay, setShowHowToPlay] = useState(false);
   const [isAppLoaded, setIsAppLoaded] = useState(false);
+  const [lang, setLang] = useState<Lang>('pt');
+
+  const t = DICTIONARY[lang];
 
   useEffect(() => {
     // 2.8s para deixar os meteoros rasgarem a tela
@@ -486,6 +572,27 @@ export default function AstroMissionLanding() {
       previousFocus?.focus?.();
     };
   }, [showHowToPlay]);
+
+  // Efeito Parallax Otimizado
+  useEffect(() => {
+    let rafId: number;
+    const handleMouseMove = (e: MouseEvent) => {
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        const x = (e.clientX / window.innerWidth - 0.5) * 20;
+        const y = (e.clientY / window.innerHeight - 0.5) * 20;
+        document.documentElement.style.setProperty("--mouse-x", `${x}`);
+        document.documentElement.style.setProperty("--mouse-y", `${y}`);
+        document.documentElement.style.setProperty("--cursor-x", `${e.clientX}px`);
+        document.documentElement.style.setProperty("--cursor-y", `${e.clientY}px`);
+      });
+    };
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      if (rafId) cancelAnimationFrame(rafId);
+    };
+  }, []);
 
   return (
     <main
@@ -577,7 +684,15 @@ export default function AstroMissionLanding() {
       `}} />
 
       {/* TELA DE LOADING (METEOROS REALISTAS) */}
-      <BigMeteorsLoading isLoaded={isAppLoaded} />
+      <BigMeteorsLoading isLoaded={isAppLoaded} text={t.preparing} />
+
+      {/* CURSOR AURA GLOW */}
+      <div className="pointer-events-none fixed inset-0 z-[2] transition-opacity duration-300">
+         <div 
+           className="absolute -inset-full opacity-30" 
+           style={{ background: 'radial-gradient(600px circle at var(--cursor-x, 50%) var(--cursor-y, 50%), rgba(34,211,238,0.25), transparent 50%)' }} 
+         />
+      </div>
 
       {/* Fundo espacial e nebulosas */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0">
@@ -593,48 +708,47 @@ export default function AstroMissionLanding() {
 
       {/* Navegação superior */}
       <header className="relative z-50 mx-auto flex w-full max-w-[1320px] items-center justify-between px-5 py-6 sm:px-8 md:px-12 md:py-8">
-        <nav aria-label="Navegação principal" className="hidden items-center gap-8 text-sm font-medium text-white/95 md:flex lg:gap-12">
-          <a href="#home" className="transition hover:text-cyan-300">Home</a>
-          <button type="button" onClick={() => setShowHowToPlay(true)} className="cursor-pointer transition-colors duration-300 hover:text-cyan-300">Como Jogar</button>
+        
+        <nav aria-label="Navegação principal" className={`hidden flex-1 items-center gap-8 text-sm font-medium text-white/95 md:flex lg:gap-12 transition-all duration-700 delay-300 ${isAppLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+          <a href="#home" className="transition hover:text-cyan-300">{t.navHome}</a>
+          <button type="button" onClick={() => setShowHowToPlay(true)} className="cursor-pointer transition-colors duration-300 hover:text-cyan-300">{t.navHowToPlay}</button>
         </nav>
 
-        <BrandLogo />
+        <div className={`flex-1 flex justify-center md:justify-center w-full relative transition-all duration-700 delay-100 ${isAppLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-90'}`}>
+          <BrandLogo />
+        </div>
 
-        <nav aria-label="Links adicionais" className="hidden items-center gap-8 text-sm font-medium text-white/95 md:flex lg:gap-12">
-        </nav>
-
-        <a
-          href="#contact"
-          className="ml-auto rounded-full border border-cyan-300/70 px-4 py-2 text-xs font-semibold text-cyan-100 transition hover:bg-cyan-300/10 md:hidden"
-        >
-          Contact
-        </a>
+        {/* Botões do lado direito (Toggle Idioma) */}
+        <div className={`flex flex-1 items-center justify-end gap-4 transition-all duration-700 delay-300 ${isAppLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+          <div className="flex bg-[#0c1b36]/80 rounded-full border border-cyan-500/30 p-1 backdrop-blur-md">
+            <button 
+              type="button"
+              onClick={() => setLang('pt')} 
+              className={`rounded-full px-3 py-1.5 text-xs font-bold transition-all ${lang === 'pt' ? 'bg-cyan-500 text-white shadow-[0_0_10px_rgba(34,211,238,.4)]' : 'text-slate-400 hover:text-cyan-200'}`}
+            >
+              PT
+            </button>
+            <button 
+              type="button"
+              onClick={() => setLang('en')} 
+              className={`rounded-full px-3 py-1.5 text-xs font-bold transition-all ${lang === 'en' ? 'bg-cyan-500 text-white shadow-[0_0_10px_rgba(34,211,238,.4)]' : 'text-slate-400 hover:text-cyan-200'}`}
+            >
+              EN
+            </button>
+          </div>
+        </div>
       </header>
 
       {/* Título principal */}
-      <section className="relative z-30 mx-auto mt-10 flex w-full max-w-5xl flex-col items-center px-4 text-center sm:mt-12 md:mt-8">
-        
+      <section className={`relative z-30 mx-auto mt-10 flex w-full max-w-5xl flex-col items-center px-4 text-center sm:mt-12 md:mt-8 transition-all duration-700 delay-200 ${isAppLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
         <div className="relative">
-          {/* Órbita ao redor do título */}
           <svg
             aria-hidden="true"
             viewBox="0 0 760 300"
             className="pointer-events-none absolute -left-[8%] top-[-13%] z-0 h-[120%] w-[116%] overflow-visible"
           >
-            <path
-              d="M35 190 C130 80 260 70 395 56 C535 40 652 43 708 4"
-              fill="none"
-              stroke="#173b91"
-              strokeWidth="13"
-              strokeLinecap="round"
-            />
-            <path
-              d="M35 190 C130 80 260 70 395 56 C535 40 652 43 708 4"
-              fill="none"
-              stroke="#60a5fa"
-              strokeWidth="4"
-              strokeLinecap="round"
-            />
+            <path d="M35 190 C130 80 260 70 395 56 C535 40 652 43 708 4" fill="none" stroke="#173b91" strokeWidth="13" strokeLinecap="round" />
+            <path d="M35 190 C130 80 260 70 395 56 C535 40 652 43 708 4" fill="none" stroke="#60a5fa" strokeWidth="4" strokeLinecap="round" />
           </svg>
 
           <h1 className="relative z-10 flex flex-col items-center text-[clamp(3.8rem,9.6vw,8.7rem)] font-black italic leading-[0.78] tracking-[-0.075em]">
@@ -660,10 +774,10 @@ export default function AstroMissionLanding() {
         </div>
 
         <p className="relative z-20 mt-7 text-sm font-medium tracking-wide text-white sm:text-lg md:mt-6">
-          Construa • Administre • Sobreviva na Lua
+          {t.subtitle}
         </p>
 
-        {/* ASTEROIDE INTERATIVO — botão para iniciar o jogo */}
+        {/* ASTEROIDE INTERATIVO */}
         <div className="group relative z-30 mt-7 flex items-center justify-center sm:mt-8">
           <div className="absolute -left-16 top-1/2 h-12 w-36 -translate-y-1/2 -rotate-12 rounded-full bg-cyan-400/25 blur-2xl transition-all duration-500 group-hover:bg-cyan-300/45 group-hover:blur-3xl" />
           <div className="absolute -right-10 top-1/2 h-24 w-24 -translate-y-1/2 rounded-full bg-blue-500/25 blur-2xl transition-all duration-500 group-hover:bg-blue-400/40" />
@@ -675,13 +789,12 @@ export default function AstroMissionLanding() {
           <button
             type="button"
             onClick={() => navigate('/briefing')}
-            aria-label="Jogar Astro Mission"
+            aria-label={t.playBtn}
             className="relative block w-[260px] cursor-pointer transition duration-300 ease-out hover:-translate-y-2 hover:scale-105 active:translate-y-0 active:scale-100 sm:w-[310px] bg-transparent border-none p-0 outline-none"
           >
             <svg
               viewBox="0 0 340 190"
               role="img"
-              aria-label="Asteroide azul"
               className="h-auto w-full overflow-visible drop-shadow-[0_13px_15px_rgba(0,0,0,.45)] transition duration-500 group-hover:drop-shadow-[0_15px_25px_rgba(34,211,238,.45)]"
             >
               <defs>
@@ -717,37 +830,38 @@ export default function AstroMissionLanding() {
 
             <span className="absolute inset-0 flex flex-col items-center justify-center pt-1 text-center">
               <span className="text-3xl font-black italic tracking-[0.12em] text-white drop-shadow-[0_3px_3px_rgba(0,0,0,.8)] sm:text-4xl">
-                JOGAR
+                {t.playBtn}
               </span>
               <span className="mt-1 text-[8px] font-bold tracking-[0.2em] text-blue-100/90 drop-shadow-[0_1px_3px_rgba(0,0,0,.9)]">
-                INICIAR MISSÃO
+                {t.startMission}
               </span>
             </span>
           </button>
         </div>
       </section>
 
-      <GalaxyTrail />
+      <div className={`transition-opacity duration-1000 delay-500 ${isAppLoaded ? 'opacity-100' : 'opacity-0'}`}>
+        <GalaxyTrail />
+        <MoonSurface />
+      </div>
+
       <Spaceship />
+      <LumiRobot isAppLoaded={isAppLoaded} textTransm={t.lumiTransm} textSpeech={t.lumiSpeech} />
 
       <section className="absolute bottom-[29%] left-5 z-30 max-w-[48%] border-l-2 border-cyan-400 pl-3 sm:hidden">
         <p className="text-[11px] leading-relaxed text-white/95">
-          Explore space, learn new things and build a better tomorrow with
-          Astro Mission!
+          {t.mobileDesc}
         </p>
       </section>
-
-      <MoonSurface />
-      <LumiRobot isAppLoaded={isAppLoaded} />
 
       <footer
         id="contact"
         className="absolute bottom-2 left-1/2 z-50 -translate-x-1/2 whitespace-nowrap text-[10px] text-white/60 sm:text-xs"
       >
-        © Astro Mission • Explore the Universe
+        {t.footer}
       </footer>
 
-      {/* Modal de instruções — central de comando da missão */}
+      {/* Modal de instruções */}
       {showHowToPlay && (
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-[#01030f]/90 px-3 py-5 backdrop-blur-xl sm:px-6"
@@ -763,7 +877,6 @@ export default function AstroMissionLanding() {
             onClick={(event) => event.stopPropagation()}
             className="relative my-auto w-full max-w-6xl overflow-hidden rounded-[1.75rem] border border-cyan-300/25 bg-[#071126] shadow-[0_30px_120px_rgba(0,0,0,.75),0_0_55px_rgba(14,165,233,.14)]"
           >
-            {/* Moldura e detalhes de interface */}
             <div className="pointer-events-none absolute inset-0 opacity-40">
               <div className="absolute inset-0 bg-[linear-gradient(rgba(56,189,248,.045)_1px,transparent_1px),linear-gradient(90deg,rgba(56,189,248,.045)_1px,transparent_1px)] bg-[size:28px_28px]" />
               <div className="absolute -right-28 -top-32 h-80 w-80 rounded-full border border-cyan-300/20" />
@@ -787,38 +900,38 @@ export default function AstroMissionLanding() {
                   🤖
                 </div>
                 <div>
-                  <p className="text-[11px] font-black uppercase tracking-[.28em] text-cyan-300">Astro Mission • Guia rápido</p>
-                  <p className="mt-1 text-sm font-semibold tracking-wider text-slate-400">O ESSENCIAL PARA COMEÇAR</p>
+                  <p className="text-[11px] font-black uppercase tracking-[.28em] text-cyan-300">{t.modalGuide}</p>
+                  <p className="mt-1 text-sm font-semibold tracking-wider text-slate-400">{t.modalEssent}</p>
                 </div>
               </div>
 
               <div className="grid gap-5 lg:grid-cols-[.8fr_1.5fr] lg:gap-7">
                 <div className="flex flex-col justify-center">
-                  <p className="mb-3 text-xs font-bold uppercase tracking-[.25em] text-blue-300">Sua missão</p>
+                  <p className="mb-3 text-xs font-bold uppercase tracking-[.25em] text-blue-300">{t.modalYourMission}</p>
                   <h2 id="how-to-play-title" className="max-w-sm text-3xl font-black uppercase leading-[1.05] tracking-tight text-white sm:text-4xl">
-                    Como <span className="text-cyan-300">jogar?</span>
+                    {t.modalHowTo} <span className="text-cyan-300">{t.modalHowToPlay}</span>
                   </h2>
                   <div className="mt-5 rounded-2xl border border-amber-300/25 bg-amber-300/[.07] p-4">
                     <div className="mb-2 flex items-center gap-2">
                       <span className="text-xl">🌙</span>
-                      <p className="text-xs font-black uppercase tracking-[.18em] text-amber-200">Objetivo</p>
+                      <p className="text-xs font-black uppercase tracking-[.18em] text-amber-200">{t.modalObj}</p>
                     </div>
                     <p id="how-to-play-objective" className="text-base leading-relaxed text-slate-200">
-                      Mantenha a base lunar funcionando por <strong className="text-amber-200">7 dias</strong>.
+                      {t.modalObjDesc} <strong className="text-amber-200">{t.modalObjDays}</strong>{t.modalObjEnd}
                     </p>
                   </div>
                 </div>
 
                 <div>
                   <div className="mb-3 flex items-center justify-between">
-                    <p className="text-xs font-black uppercase tracking-[.22em] text-cyan-200">Faça 3 coisas</p>
-                    <span className="font-mono text-xs text-slate-500">03 PASSOS</span>
+                    <p className="text-xs font-black uppercase tracking-[.22em] text-cyan-200">{t.modal3Things}</p>
+                    <span className="font-mono text-xs text-slate-500">{t.modalSteps}</span>
                   </div>
                   <div className="grid gap-3 sm:grid-cols-3">
                     {[
-                      { n: "01", icon: "🫁", title: "Monitore os recursos", desc: "Cuide do oxigênio, da água, da energia e dos alimentos." },
-                      { n: "02", icon: "🧩", title: "Expanda a base", desc: "Use seus créditos para construir novos módulos." },
-                      { n: "03", icon: "🤖", title: "Ajude o LUMI", desc: "Responda aos desafios do robô durante a missão." },
+                      { n: "01", icon: "🫁", title: t.step1Title, desc: t.step1Desc },
+                      { n: "02", icon: "🧩", title: t.step2Title, desc: t.step2Desc },
+                      { n: "03", icon: "🤖", title: t.step3Title, desc: t.step3Desc },
                     ].map((step) => (
                       <div key={step.n} className="group relative min-h-[160px] overflow-hidden rounded-2xl border border-white/10 bg-[#0c1b36]/90 p-5 transition duration-300 hover:-translate-y-1 hover:border-cyan-300/40 hover:bg-[#102442]">
                         <div className="mb-3 flex items-center justify-between">
@@ -835,13 +948,13 @@ export default function AstroMissionLanding() {
               </div>
 
               <div className="mt-5 flex flex-col-reverse gap-3 border-t border-white/10 pt-4 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-[11px] font-semibold uppercase tracking-[.16em] text-slate-400">Boa sorte, astronauta!</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[.16em] text-slate-400">{t.modalLuck}</p>
                 <button
                   type="button"
                   onClick={() => navigate('/briefing')}
                   className="w-full rounded-xl border border-cyan-200/50 bg-cyan-300 px-6 py-3 text-sm font-black uppercase tracking-[.16em] text-[#061126] shadow-[0_0_25px_rgba(34,211,238,.2)] transition duration-200 hover:-translate-y-0.5 hover:bg-cyan-200 hover:shadow-[0_0_35px_rgba(34,211,238,.35)] active:translate-y-0 sm:w-auto"
                 >
-                  Entendi • Iniciar missão ↗
+                  {t.modalBtn}
                 </button>
               </div>
             </div>

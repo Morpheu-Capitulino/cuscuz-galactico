@@ -4,110 +4,106 @@ import type { Inventory, BaseIndicators } from '../../store/gameStore';
 
 export type StructureId = 'habitat' | 'purifier' | 'greenhouse' | 'solar' | 'radiation' | 'medical' | 'dormitory';
 
+export interface BilingualText {
+  pt: string;
+  en: string;
+}
+
 export interface StructureLevel {
-  effect: string;
+  effect: BilingualText;
   cost: Partial<Inventory>;
 }
 
 export interface StructureDef {
   id: StructureId;
-  name: string;
-  desc: string;
+  name: BilingualText;
+  desc: BilingualText;
   levels: StructureLevel[];
   icon: ReactNode;
 }
 
 export const STRUCTURES: StructureDef[] = [
   { 
-    id: 'habitat', name: 'ABRIGO PRINCIPAL', desc: 'O coração da base! Fornece oxigênio para a equipe.', 
+    id: 'habitat', 
+    name: { pt: 'ABRIGO PRINCIPAL', en: 'MAIN HABITAT' }, 
+    desc: { pt: 'O coração da base! Fornece oxigênio para a equipe.', en: 'The heart of the base! Provides oxygen to the crew.' }, 
     levels: [
-      { effect: 'Suporte de vida básico', cost: { regolith: 100, ice: 0, parts: 25 } },
-      { effect: 'Eficiência de oxigênio', cost: { regolith: 150, ice: 0, parts: 45 } },
-      { effect: 'Recuperação passiva', cost: { regolith: 220, ice: 0, parts: 85 } }
+      { effect: { pt: 'Suporte de vida básico', en: 'Basic life support' }, cost: { regolith: 100, ice: 0, parts: 25 } },
+      { effect: { pt: 'Eficiência de oxigênio', en: 'Oxygen efficiency' }, cost: { regolith: 150, ice: 0, parts: 45 } },
+      { effect: { pt: 'Recuperação passiva', en: 'Passive recovery' }, cost: { regolith: 220, ice: 0, parts: 85 } }
     ], icon: <Home size={24} /> 
   },
   { 
-    id: 'purifier', name: 'FILTRO DE ÁGUA', desc: 'Transforma gelo bruto em água potável.', 
+    id: 'purifier', 
+    name: { pt: 'FILTRO DE ÁGUA', en: 'WATER PURIFIER' }, 
+    desc: { pt: 'Transforma gelo bruto em água potável.', en: 'Transforms raw ice into drinkable water.' }, 
     levels: [
-      { effect: 'Reciclagem básica', cost: { regolith: 50, ice: 40, parts: 20 } },
-      { effect: 'Reduz consumo', cost: { regolith: 80, ice: 55, parts: 40 } },
-      { effect: 'Eficiência máxima', cost: { regolith: 120, ice: 70, parts: 65 } }
+      { effect: { pt: 'Reciclagem básica', en: 'Basic recycling' }, cost: { regolith: 50, ice: 40, parts: 20 } },
+      { effect: { pt: 'Reduz consumo', en: 'Reduced consumption' }, cost: { regolith: 80, ice: 55, parts: 40 } },
+      { effect: { pt: 'Eficiência máxima', en: 'Maximum efficiency' }, cost: { regolith: 120, ice: 70, parts: 65 } }
     ], icon: <Droplets size={24} /> 
   },
   { 
-    id: 'greenhouse', name: 'ESTUFA DE PLANTAS', desc: 'Jardim para cultivar alimentos.', 
+    id: 'greenhouse', 
+    name: { pt: 'ESTUFA DE PLANTAS', en: 'GREENHOUSE' }, 
+    desc: { pt: 'Jardim para cultivar alimentos.', en: 'Garden to grow food for the crew.' }, 
     levels: [
-      { effect: 'Produção básica', cost: { regolith: 60, ice: 35, parts: 25 } },
-      { effect: 'Produção acelerada', cost: { regolith: 90, ice: 55, parts: 50 } },
-      { effect: 'Super colheita', cost: { regolith: 150, ice: 85, parts: 75 } }
+      { effect: { pt: 'Produção básica', en: 'Basic production' }, cost: { regolith: 60, ice: 35, parts: 25 } },
+      { effect: { pt: 'Produção acelerada', en: 'Accelerated growth' }, cost: { regolith: 90, ice: 55, parts: 50 } },
+      { effect: { pt: 'Super colheita', en: 'Super harvest' }, cost: { regolith: 150, ice: 85, parts: 75 } }
     ], icon: <Sprout size={24} /> 
   },
   { 
-    id: 'solar', name: 'PAINÉIS SOLARES', desc: 'Matriz solar para energizar a base.', 
+    id: 'solar', 
+    name: { pt: 'PAINÉIS SOLARES', en: 'SOLAR PANELS' }, 
+    desc: { pt: 'Matriz solar para energizar a base.', en: 'Solar array to power the base.' }, 
     levels: [
-      { effect: 'Geração básica', cost: { regolith: 80, ice: 0, parts: 20 } },
-      { effect: 'Geração melhorada', cost: { regolith: 120, ice: 0, parts: 45 } },
-      { effect: 'Armazenamento extra', cost: { regolith: 180, ice: 0, parts: 80 } }
+      { effect: { pt: 'Geração básica', en: 'Basic generation' }, cost: { regolith: 80, ice: 0, parts: 20 } },
+      { effect: { pt: 'Geração melhorada', en: 'Improved generation' }, cost: { regolith: 120, ice: 0, parts: 45 } },
+      { effect: { pt: 'Armazenamento extra', en: 'Extra storage' }, cost: { regolith: 180, ice: 0, parts: 80 } }
     ], icon: <Sun size={24} /> 
   },
   { 
-    id: 'radiation', name: 'ESCUDO PROTETOR', desc: 'Barreira magnética contra radiação.', 
+    id: 'radiation', 
+    name: { pt: 'ESCUDO PROTETOR', en: 'DEFLECTOR SHIELD' }, 
+    desc: { pt: 'Barreira magnética contra radiação.', en: 'Magnetic barrier against radiation.' }, 
     levels: [
-      { effect: 'Proteção básica', cost: { regolith: 150, ice: 25, parts: 30 } },
-      { effect: 'Resiste a tempestades', cost: { regolith: 220, ice: 55, parts: 55 } },
-      { effect: 'Bloqueio total', cost: { regolith: 320, ice: 90, parts: 110 } }
+      { effect: { pt: 'Proteção básica', en: 'Basic protection' }, cost: { regolith: 150, ice: 25, parts: 30 } },
+      { effect: { pt: 'Resiste a tempestades', en: 'Storm resistance' }, cost: { regolith: 220, ice: 55, parts: 55 } },
+      { effect: { pt: 'Bloqueio total', en: 'Total block' }, cost: { regolith: 320, ice: 90, parts: 110 } }
     ], icon: <Shield size={24} /> 
   },
   { 
-    id: 'medical', name: 'ENFERMARIA', desc: 'Módulo hospitalar para a tripulação.', 
+    id: 'medical', 
+    name: { pt: 'ENFERMARIA', en: 'MEDICAL BAY' }, 
+    desc: { pt: 'Módulo hospitalar para a tripulação.', en: 'Hospital module for the crew.' }, 
     levels: [
-      { effect: 'Recuperação médica', cost: { regolith: 90, ice: 30, parts: 50 } },
-      { effect: 'Tratamento rápido', cost: { regolith: 130, ice: 45, parts: 85 } },
-      { effect: 'Regeneração celular', cost: { regolith: 200, ice: 75, parts: 130 } }
+      { effect: { pt: 'Recuperação médica', en: 'Medical recovery' }, cost: { regolith: 90, ice: 30, parts: 50 } },
+      { effect: { pt: 'Tratamento rápido', en: 'Fast treatment' }, cost: { regolith: 130, ice: 45, parts: 85 } },
+      { effect: { pt: 'Regeneração celular', en: 'Cellular regeneration' }, cost: { regolith: 200, ice: 75, parts: 130 } }
     ], icon: <HeartPulse size={24} /> 
   },
   { 
-    id: 'dormitory', name: 'DORMITÓRIO', desc: 'Alojamentos para restauração de energia.', 
+    id: 'dormitory', 
+    name: { pt: 'DORMITÓRIO', en: 'CREW QUARTERS' }, 
+    desc: { pt: 'Alojamentos para restauração de energia.', en: 'Living quarters for energy restoration.' }, 
     levels: [
-      { effect: 'Descanso básico', cost: { regolith: 70, ice: 20, parts: 40 } },
-      { effect: 'Sono reparador', cost: { regolith: 110, ice: 35, parts: 75 } },
-      { effect: 'Recarga otimizada', cost: { regolith: 160, ice: 55, parts: 105 } }
+      { effect: { pt: 'Descanso básico', en: 'Basic rest' }, cost: { regolith: 70, ice: 20, parts: 40 } },
+      { effect: { pt: 'Sono reparador', en: 'Restful sleep' }, cost: { regolith: 110, ice: 35, parts: 75 } },
+      { effect: { pt: 'Recarga otimizada', en: 'Optimized recharge' }, cost: { regolith: 160, ice: 55, parts: 105 } }
     ], icon: <BedDouble size={24} /> 
   }
 ];
 
 export const RESEARCH_TREE = [
-  { id: 'r_water', name: 'Super Filtros', desc: 'Desbloqueia melhorias avançadas do Filtro.', cost: 30, req: 'purifier', duration: 80 },
-  { id: 'r_farm', name: 'Agricultura Lunar', desc: 'Sementes geneticamente modificadas.', cost: 40, req: 'greenhouse', duration: 100 },
-  { id: 'r_solar', name: 'Engenharia Avançada', desc: 'Baterias e estruturas otimizadas.', cost: 60, req: 'solar', duration: 120 },
-  { id: 'r_med', name: 'Medicina Espacial', desc: 'Técnicas avançadas de cura celular.', cost: 45, req: 'medical', duration: 90 },
+  { id: 'r_water', name: { pt: 'Super Filtros', en: 'Super Filters' }, desc: { pt: 'Desbloqueia melhorias avançadas do Filtro.', en: 'Unlocks advanced Filter upgrades.' }, cost: 30, req: 'purifier', duration: 80 },
+  { id: 'r_farm', name: { pt: 'Agricultura Lunar', en: 'Lunar Agriculture' }, desc: { pt: 'Sementes geneticamente modificadas.', en: 'Genetically modified seeds.' }, cost: 40, req: 'greenhouse', duration: 100 },
+  { id: 'r_solar', name: { pt: 'Engenharia Avançada', en: 'Advanced Engineering' }, desc: { pt: 'Baterias e estruturas otimizadas.', en: 'Optimized batteries and structures.' }, cost: 60, req: 'solar', duration: 120 },
+  { id: 'r_med', name: { pt: 'Medicina Espacial', en: 'Space Medicine' }, desc: { pt: 'Técnicas avançadas de cura celular.', en: 'Advanced cellular healing techniques.' }, cost: 45, req: 'medical', duration: 90 },
 ];
 
 export const EXPEDITIONS = [
-  { id: 'e1', name: 'Caverna Congelada', desc: 'Uma gruta escura com altas concentrações de gelo.', duration: 140, risk: 'Moderado', reward: { ice: 45, regolith: 10 } },
-  { id: 'e2', name: 'Cemitério de Naves', desc: 'Destroços de antigas sondas. Rico em peças.', duration: 200, risk: 'Alto', reward: { parts: 40, regolith: 20 } },
-  { id: 'e3', name: 'Montanha de Pedras', desc: 'Formação rochosa perfeita para mineração.', duration: 110, risk: 'Baixo', reward: { regolith: 65 } },
-];
-
-export interface BaseEvent {
-  id: string;
-  title: string;
-  desc: string;
-  options: {
-    text: string;
-    cost: Partial<Inventory>;
-    dmg?: { type: keyof BaseIndicators; amount: number };
-  }[];
-}
-
-export const BASE_EVENTS: BaseEvent[] = [
-  { 
-    id: 'dust_storm', title: 'TEMPESTADE DE POEIRA LUNAR!', 
-    desc: 'Alerta vermelho! Um furacão de poeira cobriu os painéis. A energia vai despencar se não agirmos rápido!', 
-    options: [
-      { text: 'Limpar Painéis (Gasta 10 Peças)', cost: { parts: 10 }, dmg: { type: 'energy', amount: 0 } }, 
-      { text: 'Apagar as Luzes (Perde 30% Energia)', cost: {}, dmg: { type: 'energy', amount: 30 } },
-      { text: 'Deixar Bater (Danifica o Escudo)', cost: {}, dmg: { type: 'shield', amount: 40 } }
-    ] 
-  }
+  { id: 'e1', name: { pt: 'Caverna Congelada', en: 'Frozen Cave' }, desc: { pt: 'Uma gruta escura com altas concentrações de gelo.', en: 'A dark cave with high ice concentrations.' }, duration: 140, risk: { pt: 'Moderado', en: 'Moderate' }, reward: { ice: 45, regolith: 10 } },
+  { id: 'e2', name: { pt: 'Cemitério de Naves', en: 'Ship Graveyard' }, desc: { pt: 'Destroços de antigas sondas. Rico em peças.', en: 'Debris from old probes. Rich in parts.' }, duration: 200, risk: { pt: 'Alto', en: 'High' }, reward: { parts: 40, regolith: 20 } },
+  { id: 'e3', name: { pt: 'Montanha de Pedras', en: 'Stone Mountain' }, desc: { pt: 'Formação rochosa perfeita para mineração.', en: 'Rock formation perfect for mining.' }, duration: 110, risk: { pt: 'Baixo', en: 'Low' }, reward: { regolith: 65 } },
 ];

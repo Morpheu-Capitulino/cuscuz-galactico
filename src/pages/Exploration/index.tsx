@@ -1,44 +1,60 @@
 // src/pages/Exploration/index.tsx
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useGameStore } from '../../store/gameStore';
-import { Pickaxe, Droplets, Radar, Settings, Package, ShoppingCart, BookOpen, Flame, AlertTriangle, HeartPulse, Wrench, Wind, BatteryCharging, Shield, Rocket, Activity, Info, X, Mountain, FastForward, Zap, Star } from 'lucide-react';
+import { Pickaxe, Droplets, Radar, Settings, Package, ShoppingCart, BookOpen, Flame, AlertTriangle, HeartPulse, Wrench, Wind, BatteryCharging, Shield, Rocket, Activity, Info, X, Mountain, FastForward, Zap, Star, Archive } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { DICTIONARY, MANUAL_CONTENT, GAME_EVENTS, PLANETS, TARGET_DISTANCE } from './constants';
-import { IndicatorItem, ShopModal } from './components/UI';
+import { IndicatorItem, ShopModal, LogbookModal } from './components/UI';
+
+// ==========================================
+// CONFIGURAÇÕES DO JOGO 
+// ==========================================
+const GAME_CONFIG = {
+  // Meteor Madness (Tempestade de Meteoros)
+  madnessCheckInterval: 8000,      // Tempo entre cada teste de Madness (em ms)
+  madnessBaseChance: 0.12,         // Chance inicial (12%)
+  madnessMaxBonusChance: 0.28,     // Bônus máximo somado no fim da viagem (12% + 28% = 40%)
+  madnessDuration: 15000,          // Quanto tempo dura o evento Madness (em ms)
+  madnessSpawnInterval: 120,       // Quão rápido os itens caem DURANTE o Madness (menor = mais rápido)
+
+  // Spawn Normal (Viagem Comum)
+  baseSpawnInterval: 1000,         // Velocidade de queda normal (1.0s)
+  hyperdriveSpawnInterval: 700,    // Velocidade de queda no Hyperdrive
+  
+  // Chances de Itens DURANTE O METEOR MADNESS (Apenas perigos)
+  madnessHazardRatio: {
+    meteor: 0.85, // 85% pedra gigante
+    hazard: 0.15  // 15% fogo
+  },
+
+  // Chances de Perigos (Pedra Gigante e Fogo) NA VIAGEM NORMAL
+  normalDangerBaseChance: 0.20,    // 20% no início
+  normalDangerMaxBonus: 0.35,      // +35% no final (Total 55% no fim)
+  
+  // Se for cair um perigo, qual a chance de ser Fogo ou Pedra?
+  dangerRatio: {
+    meteor: 0.50, // 50% Pedra gigante
+    hazard: 0.50  // 50% Fogo vermelho
+  },
+
+  // Se NÃO for perigo, quais as chances dos recursos bons caírem? (soma = 1.0)
+  resourceChances: {
+    he3: 0.04,     // 4% Nitro Roxo (> 0.96)
+    star: 0.10,    // 10% Bateria (> 0.86)
+    parts: 0.20,   // 20% Peças Laranja (> 0.66)
+    ice: 0.16,     // 16% Gelo Azul (> 0.50)
+    regolith: 0.50 // 50% Pedra Cinza (O resto)
+  }
+};
+// ==========================================
 
 type Lang = 'en' | 'pt';
 
-interface Anomaly { 
-  id: number; 
-  startX: number; 
-  duration: number; 
-  type: 'regolith' | 'ice' | 'parts' | 'he3' | 'hazard' | 'meteor' | 'star'; 
-  size: 'sm' | 'md' | 'lg'; 
-  createdAt: number; 
-  expiresAt: number; 
-}
-
-interface FloatingText { 
-  id: number; 
-  x: number; 
-  y: number; 
-  text: string; 
-  color: string; 
-}
-
-interface Projectile { 
-  id: number; 
-  x: number; 
-  y: number; 
-}
-
-interface Explosion {
-  id: number;
-  x: number;
-  y: number;
-  color: string;
-}
+interface Anomaly { id: number; startX: number; duration: number; type: 'regolith' | 'ice' | 'parts' | 'he3' | 'hazard' | 'meteor' | 'star'; size: 'sm' | 'md' | 'lg'; createdAt: number; expiresAt: number; }
+interface FloatingText { id: number; x: number; y: number; text: string; color: string; }
+interface Projectile { id: number; x: number; y: number; }
+interface Explosion { id: number; x: number; y: number; color: string; }
 
 export default function Exploration() {
   const navigate = useNavigate();
@@ -47,13 +63,10 @@ export default function Exploration() {
   const setGlobalLang = useGameStore(state => state.setLanguage);
   
   const lang = (globalLangStore || localLang) as Lang;
-  const changeLang = (l: Lang) => { 
-    if (setGlobalLang) setGlobalLang(l); 
-    setLocalLang(l); 
-  };
+  const changeLang = (l: Lang) => { if (setGlobalLang) setGlobalLang(l); setLocalLang(l); };
 
   const { regolith, ice, parts } = useGameStore(state => state.inventory);
-  const { laserLevel, radarLevel, droneLevel, cargoLevel, shieldLevel, engineLevel, armorLevel, coreLevel, scoopLevel, turretLevel } = useGameStore(state => state);
+  const { laserLevel, radarLevel, droneLevel, cargoLevel, shieldLevel, engineLevel, armorLevel, coreLevel, scoopLevel, turretLevel, unlockedEvents, unlockEvent } = useGameStore(state => state);
   const { collectResource, updateIndicator } = useGameStore(state => state);
 
   const indicatorsStore = useGameStore(state => state.indicators) || { o2: 100, water: 100, energy: 100 };
@@ -63,30 +76,26 @@ export default function Exploration() {
 
   const [shipHealth, setShipHealth] = useState(100); 
   const t = DICTIONARY[lang];
-
   const [tutorialStep, setTutorialStep] = useState(1); 
-
   const [anomalies, setAnomalies] = useState<Anomaly[]>([]);
   const [floatingTexts, setFloatingTexts] = useState<FloatingText[]>([]);
   const [explosions, setExplosions] = useState<Explosion[]>([]);
   const [combo, setCombo] = useState(1.0);
-  
   const [nitroActive, setNitroActive] = useState(false);
   const nitroTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [activeEvent, setActiveEvent] = useState<any>(null);
   const [eventTimeLeft, setEventTimeLeft] = useState(30); 
   const [eventResolution, setEventResolution] = useState<{ text: string, hpMod: number, costType: string, cost: number } | null>(null);
-  
   const [gameOver, setGameOver] = useState(false);
   const [hasWon, setHasWon] = useState(false);
   
   const [isShopOpen, setIsShopOpen] = useState(false);
   const [isManualOpen, setIsManualOpen] = useState(false);
+  const [isLogbookOpen, setIsLogbookOpen] = useState(false);
   
   const [distance, setDistance] = useState(0);
   const distanceRef = useRef(distance); 
-  
   const anomaliesRef = useRef<Anomaly[]>([]);
   useEffect(() => { anomaliesRef.current = anomalies; }, [anomalies]);
 
@@ -94,17 +103,14 @@ export default function Exploration() {
   const [turretFlash, setTurretFlash] = useState(false);
   const [meteorMadness, setMeteorMadness] = useState(false);
   const meteorMadnessTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const comboTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const typingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const eventTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const isMenuOpen = isShopOpen || isManualOpen;
+  const isMenuOpen = isShopOpen || isManualOpen || isLogbookOpen;
   const isEventActive = activeEvent !== null || eventResolution !== null;
   const isEndState = gameOver || hasWon;
-  
   const isTutorialPhase = tutorialStep < 19;
-
   const canMoveAndShoot = !isMenuOpen && !isEventActive && !isEndState;
   const canDrainAndTravel = !isMenuOpen && !isEventActive && !isEndState && !isTutorialPhase;
 
@@ -117,7 +123,6 @@ export default function Exploration() {
   const projectilesRef = useRef<Projectile[]>([]);
   const keys = useRef({ w: false, a: false, s: false, d: false });
 
-  // A escala visual muda se o jogador comprar muito cargo ou armor
   const shipScale = 1 + (armorLevel * 0.08) + (cargoLevel * 0.05); 
   const shipScaleRef = useRef(shipScale);
   const diff = Math.min(1, distance / TARGET_DISTANCE);
@@ -327,7 +332,6 @@ export default function Exploration() {
         const color = anomaly.type === 'parts' ? 'text-orange-400' : 'text-slate-300';
         spawnFloatingText(cx, cy, `+${finalAmount}`, color);
     }
-
   }, [collectResource, updateIndicator, combo, laserLevel, cargoLevel, coreLevel, scoopLevel, tutorialStep, isTutorialPhase, isHyperdrive, t, triggerScreenShake, spawnFloatingText, spawnExplosion]);
 
   const handleCollectRef = useRef(handleCollectInternal);
@@ -481,16 +485,16 @@ export default function Exploration() {
   useEffect(() => {
     if (!canDrainAndTravel) return;
     const madnessInterval = setInterval(() => {
-        const additionalMadness = Math.floor(distanceRef.current / 1000) * 0.05;
-        const madnessChance = 0.15 + additionalMadness; 
+        const currentDiff = Math.min(1, distanceRef.current / TARGET_DISTANCE);
+        const madnessChance = GAME_CONFIG.madnessBaseChance + (currentDiff * GAME_CONFIG.madnessMaxBonusChance); 
 
         if (Math.random() < madnessChance && !meteorMadness) {
             setMeteorMadness(true);
             spawnFloatingText(50, 20, lang === 'pt' ? "REGIÃO INFESTADA DE METEOROS!" : "METEOR INFESTED REGION!", "text-red-500 text-3xl font-black");
             if (meteorMadnessTimer.current) clearTimeout(meteorMadnessTimer.current);
-            meteorMadnessTimer.current = setTimeout(() => { setMeteorMadness(false); }, 15000); 
+            meteorMadnessTimer.current = setTimeout(() => { setMeteorMadness(false); }, GAME_CONFIG.madnessDuration); 
         }
-    }, 8000); 
+    }, GAME_CONFIG.madnessCheckInterval); 
     return () => clearInterval(madnessInterval);
   }, [canDrainAndTravel, meteorMadness, lang, spawnFloatingText]);
 
@@ -512,9 +516,9 @@ export default function Exploration() {
     if (tutorialStep < 19) return; 
     if (!canMoveAndShoot || isEventActive) return; 
     
-    const intervalTime = meteorMadness ? 150 : (isHyperdrive ? 900 : 1200);
+    const intervalTime = meteorMadness ? GAME_CONFIG.madnessSpawnInterval : (isHyperdrive ? GAME_CONFIG.hyperdriveSpawnInterval : GAME_CONFIG.baseSpawnInterval);
     const spawnInterval = setInterval(() => {
-      const numToSpawn = radarLevel > 2 ? (Math.random() > 0.4 ? 3 : 2) : 2; 
+      const numToSpawn = radarLevel > 2 ? (Math.random() > 0.3 ? 3 : 2) : (Math.random() > 0.8 ? 3 : 2); 
       const newAnomalies: Anomaly[] = [];
       const now = Date.now();
       
@@ -525,18 +529,18 @@ export default function Exploration() {
         let type: Anomaly['type'] = 'regolith';
         
         if (meteorMadness) {
-            type = Math.random() < 0.85 ? 'meteor' : 'hazard';
+            type = Math.random() < GAME_CONFIG.madnessHazardRatio.meteor ? 'meteor' : 'hazard';
         } else {
-            const dangerChance = 0.10 + (currentDiff * 0.25); 
+            const dangerChance = GAME_CONFIG.normalDangerBaseChance + (currentDiff * GAME_CONFIG.normalDangerMaxBonus); 
             
             if (rand < dangerChance) {
-                type = Math.random() < 0.6 ? 'meteor' : 'hazard';
+                type = Math.random() < GAME_CONFIG.dangerRatio.meteor ? 'meteor' : 'hazard';
             } else {
                 const randType = Math.random();
-                if (randType > 0.96) type = 'he3';
-                else if (randType > 0.86) type = 'star';
-                else if (randType > 0.66) type = 'parts';
-                else if (randType > 0.50) type = 'ice'; 
+                if (randType > (1 - GAME_CONFIG.resourceChances.he3)) type = 'he3';
+                else if (randType > (1 - GAME_CONFIG.resourceChances.he3 - GAME_CONFIG.resourceChances.star)) type = 'star';
+                else if (randType > (1 - GAME_CONFIG.resourceChances.he3 - GAME_CONFIG.resourceChances.star - GAME_CONFIG.resourceChances.parts)) type = 'parts';
+                else if (randType > (GAME_CONFIG.resourceChances.regolith)) type = 'ice'; 
                 else type = 'regolith';
             }
         }
@@ -599,7 +603,7 @@ export default function Exploration() {
     if (tutorialStep === 15) { const t = setTimeout(() => setTutorialStep(16), 6000); return () => clearTimeout(t); }
     if (tutorialStep === 16) { const t = setTimeout(() => setTutorialStep(17), 6000); return () => clearTimeout(t); }
     if (tutorialStep === 17) { const t = setTimeout(() => setTutorialStep(18), 6000); return () => clearTimeout(t); }
-    if (tutorialStep === 19) { const t = setTimeout(finishTutorial, 5000); return () => clearTimeout(t); }
+    if (tutorialStep === 19) { finishTutorial(); }
   }, [tutorialStep, finishTutorial]);
 
   useEffect(() => {
@@ -622,7 +626,6 @@ export default function Exploration() {
     const timeToNextEvent = minTime + Math.random() * maxTime; 
     
     const eventTimer = setTimeout(() => {
-      // 5% de chance de evento espontâneo (mesmo sem bater)
       const randomEventChance = Math.random() < 0.05;
       
       if (shieldLevel > 0 && Math.random() < 0.3 && !randomEventChance) {
@@ -649,6 +652,11 @@ export default function Exploration() {
 
   const handleEventChoice = (option: any, isTimeout: boolean = false) => {
     if (eventTimerRef.current) clearInterval(eventTimerRef.current); 
+    
+    if (activeEvent && activeEvent.id) {
+        unlockEvent(activeEvent.id);
+    }
+
     const currentInventory = useGameStore.getState().inventory;
     const reqCost = option.cost;
     const hasEnough = option.costType === 'none' ? true : currentInventory[option.costType as keyof typeof currentInventory] >= reqCost;
@@ -679,13 +687,18 @@ export default function Exploration() {
   const thrusterColorInner = nitroActive ? 'bg-white shadow-[0_0_40px_white]' : engineLevel >= 5 ? 'bg-fuchsia-300 shadow-[0_0_30px_fuchsia]' : engineLevel >= 3 ? 'bg-cyan-200 shadow-[0_0_30px_white]' : 'bg-yellow-400 shadow-[0_0_20px_yellow]';
   const thrusterH1 = nitroActive ? 100 : (isHyperdrive ? 50 + engineLevel*10 : 20 + engineLevel*5);
   const thrusterH2 = nitroActive ? 130 : (isHyperdrive ? 80 + engineLevel*15 : 35 + engineLevel*8);
-  
   const projectileWidth = 1.5 + (laserLevel * 0.8);
   const shieldGlow = shieldLevel * 15;
 
   return (
     <motion.div animate={shakeScreen ? { x: [-20, 20, -20, 20, 0], filter: 'brightness(1.5)' } : { filter: 'brightness(1)' }} transition={{ duration: 0.5 }} className={`h-screen w-screen bg-[#020617] relative overflow-hidden font-sans select-none flex flex-col transition-colors duration-1000 ${isWarpSpeed && !gameOver && !hasWon ? 'bg-indigo-950/40' : meteorMadness ? 'bg-red-950/30' : ''}`}>
       
+      <AnimatePresence>
+        {shipHealth <= 20 && !gameOver && !hasWon && (
+           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 border-[12px] border-red-600/50 bg-red-900/10 pointer-events-none z-[190] animate-pulse" />
+        )}
+      </AnimatePresence>
+
       <div className="absolute inset-0 z-0 pointer-events-none opacity-80">
         {stars.map((star) => (
           <motion.div key={star.id} initial={{ y: '-10vh', x: `${star.x}vw` }} animate={{ y: '110vh' }} transition={{ duration: isWarpSpeed ? star.baseDuration * 0.2 : star.baseDuration, repeat: Infinity, ease: 'linear', delay: star.delay }} className={`absolute rounded-full ${isWarpSpeed ? 'bg-cyan-200 shadow-[0_0_15px_cyan]' : 'bg-slate-200 shadow-[0_0_5px_white]'}`} style={{ width: star.size, height: isWarpSpeed ? star.size * 15 : star.size * 3, opacity: star.size > 2 ? 0.9 : 0.6 }} />
@@ -708,19 +721,25 @@ export default function Exploration() {
          <div className="absolute inset-0 bg-black/80 z-[45] pointer-events-none transition-opacity duration-1000" />
       )}
       
-      {isTutorialPhase && tutorialStep === 18 && (
+      {isTutorialPhase && tutorialStep === 17 && (
          <div className="absolute inset-0 bg-black/85 z-[140] pointer-events-none transition-opacity duration-500" />
       )}
 
       {isTutorialPhase && (
-        <button onClick={finishTutorial} className="absolute top-24 right-6 z-[120] flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-cyan-900/80 text-cyan-400 text-[10px] font-black uppercase tracking-widest rounded-lg border border-cyan-900/50 backdrop-blur-md transition-colors shadow-lg cursor-pointer pointer-events-auto">
-           <FastForward size={14} /> {t.skipTutorial}
+        <button onClick={finishTutorial} className="absolute bottom-6 right-6 z-[120] flex items-center gap-2 px-5 py-3 bg-cyan-950/90 hover:bg-cyan-900 text-cyan-300 text-xs font-black uppercase tracking-widest rounded-xl border border-cyan-500/50 backdrop-blur-md transition-all shadow-[0_0_20px_rgba(8,145,178,0.3)] cursor-pointer pointer-events-auto hover:scale-105">
+           <FastForward size={16} /> {t.skipTutorial}
         </button>
       )}
 
+      {/* ========================================== */}
+      {/* HEADER CORRIGIDO (BARRAS NUNCA QUEBRAM) */}
+      {/* ========================================== */}
       <header className="relative z-[150] flex flex-col md:flex-row gap-4 px-4 py-2 md:px-6 md:py-3 bg-slate-950/80 backdrop-blur-md border-b border-cyan-900/30 items-center justify-between shadow-xl pointer-events-auto">
-        <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 w-full md:w-auto">
-          <button onClick={handleRepair} disabled={!canRepair} className={`relative flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-colors group shadow-sm ${canRepair ? 'bg-teal-900/60 hover:bg-teal-800 border-teal-500/50 cursor-pointer shadow-[0_0_15px_rgba(20,184,166,0.3)]' : 'bg-slate-900/50 border-slate-800/50 opacity-50 cursor-not-allowed'}`}>
+        
+        {/* Lado Esquerdo: Barras de Status (Isoladas e flex-nowrap) */}
+        <div className="flex flex-nowrap items-center justify-start gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0" style={{ scrollbarWidth: 'none' }}>
+          
+          <button onClick={handleRepair} disabled={!canRepair} className={`shrink-0 relative flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-colors group shadow-sm ${canRepair ? 'bg-teal-900/60 hover:bg-teal-800 border-teal-500/50 cursor-pointer shadow-[0_0_15px_rgba(20,184,166,0.3)]' : 'bg-slate-900/50 border-slate-800/50 opacity-50 cursor-not-allowed'}`}>
             <Wrench size={14} className={canRepair ? "text-teal-300 group-hover:animate-bounce" : "text-slate-500"} />
             <div className="flex flex-col text-left leading-none">
               <span className={`text-[9px] font-black uppercase tracking-wider ${canRepair ? "text-teal-400" : "text-slate-500"}`}>{t.repair}</span>
@@ -731,33 +750,40 @@ export default function Exploration() {
             </div>
           </button>
           
-          <IndicatorItem icon={HeartPulse} color="teal" value={shipHealth} label="HP" />
-          <IndicatorItem icon={Wind} color="cyan" value={o2} label="O2" />
-          <IndicatorItem icon={Droplets} color="blue" value={water} label="H2O" />
-          <IndicatorItem icon={BatteryCharging} color="yellow" value={energy} label="PWR" />
+          <div className="shrink-0"><IndicatorItem icon={HeartPulse} color="teal" value={shipHealth} label="HP" /></div>
+          <div className="shrink-0"><IndicatorItem icon={Wind} color="cyan" value={o2} label="O2" /></div>
+          <div className="shrink-0"><IndicatorItem icon={Droplets} color="blue" value={water} label="H2O" /></div>
+          <div className="shrink-0"><IndicatorItem icon={BatteryCharging} color="yellow" value={energy} label="PWR" /></div>
         </div>
 
-        <div className="hidden md:flex items-center gap-4 bg-slate-900/60 border border-slate-700/50 px-4 py-1.5 rounded-full shadow-inner">
-          <div className="flex items-center gap-1.5"><Pickaxe size={14} className="text-slate-400" /><span className="text-sm font-mono font-bold text-white">{regolith}</span></div>
-          <div className="w-px h-4 bg-slate-700/50" />
-          <div className="flex items-center gap-1.5"><Droplets size={14} className="text-blue-400" /><span className="text-sm font-mono font-bold text-white">{ice}</span></div>
-          <div className="w-px h-4 bg-slate-700/50" />
-          <div className="flex items-center gap-1.5"><Settings size={14} className="text-orange-400" /><span className="text-sm font-mono font-bold text-white">{parts}</span></div>
-        </div>
+        {/* Lado Direito: Recursos, Distância e Botões */}
+        <div className="flex flex-wrap md:flex-nowrap items-center justify-center md:justify-end gap-3 w-full md:w-auto">
+          
+          {/* Inventário */}
+          <div className="flex items-center gap-3 bg-slate-900/60 border border-slate-700/50 px-3 py-1.5 rounded-full shadow-inner shrink-0">
+            <div className="flex items-center gap-1.5"><Pickaxe size={14} className="text-slate-400" /><span className="text-sm font-mono font-bold text-white">{regolith}</span></div>
+            <div className="w-px h-4 bg-slate-700/50" />
+            <div className="flex items-center gap-1.5"><Droplets size={14} className="text-blue-400" /><span className="text-sm font-mono font-bold text-white">{ice}</span></div>
+            <div className="w-px h-4 bg-slate-700/50" />
+            <div className="flex items-center gap-1.5"><Settings size={14} className="text-orange-400" /><span className="text-sm font-mono font-bold text-white">{parts}</span></div>
+          </div>
 
-        <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
           {!isTutorialPhase && (
-            <div className="flex flex-col items-end mr-2">
+            <div className="flex flex-col items-end shrink-0 px-2">
               <span className="text-[9px] text-cyan-500 font-black uppercase tracking-wider">{t.distanceTitle}</span>
               <span className="text-sm font-mono font-bold text-white drop-shadow-[0_0_5px_cyan]">{Math.floor(distance)} <span className="text-[10px] text-slate-500">/ {TARGET_DISTANCE}</span></span>
             </div>
           )}
           
-          <div className="flex gap-2">
+          <div className="flex gap-2 shrink-0">
+            <button onClick={() => setIsLogbookOpen(true)} className="px-3 py-1.5 bg-blue-950/60 hover:bg-blue-900 text-blue-300 rounded-lg border border-blue-800/50 text-[10px] font-black uppercase flex items-center gap-1.5 transition-colors shadow-[0_0_15px_rgba(30,58,138,0.3)] cursor-pointer pointer-events-auto">
+                <Archive size={14} /> <span className="hidden sm:inline">{t.logbook}</span>
+            </button>
+
             <button onClick={() => setIsManualOpen(true)} className="p-2 bg-indigo-950/50 hover:bg-indigo-900/80 text-indigo-300 rounded-lg border border-indigo-800/50 transition-colors shadow-sm cursor-pointer pointer-events-auto"><BookOpen size={16} /></button>
-            <button onClick={() => { setIsShopOpen(true); }} className={`px-3 py-1.5 bg-cyan-950/50 hover:bg-cyan-900/80 text-cyan-300 rounded-lg border border-cyan-800/50 text-[10px] font-black uppercase flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer pointer-events-auto ${tutorialStep === 18 ? 'animate-pulse ring-4 ring-cyan-400 shadow-[0_0_40px_cyan] relative z-[160]' : ''}`}><ShoppingCart size={14} /> {t.upgrades}</button>
+            <button onClick={() => { setIsShopOpen(true); }} className={`px-3 py-1.5 bg-cyan-950/50 hover:bg-cyan-900/80 text-cyan-300 rounded-lg border border-cyan-800/50 text-[10px] font-black uppercase flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer pointer-events-auto ${tutorialStep === 17 ? 'animate-pulse ring-4 ring-cyan-400 shadow-[0_0_40px_cyan] relative z-[160]' : ''}`}><ShoppingCart size={14} /> <span className="hidden sm:inline">{t.upgrades}</span></button>
             
-            <div className="flex bg-slate-900/80 border border-slate-700/50 rounded-lg overflow-hidden ml-2 shadow-sm pointer-events-auto">
+            <div className="flex bg-slate-900/80 border border-slate-700/50 rounded-lg overflow-hidden shadow-sm pointer-events-auto">
               <button onClick={() => changeLang('en')} className={`px-2 py-1.5 text-[9px] font-black transition-colors ${lang === 'en' ? 'bg-cyan-700 text-white' : 'text-slate-500 hover:text-white hover:bg-slate-800'}`}>EN</button>
               <button onClick={() => changeLang('pt')} className={`px-2 py-1.5 text-[9px] font-black transition-colors ${lang === 'pt' ? 'bg-cyan-700 text-white' : 'text-slate-500 hover:text-white hover:bg-slate-800'}`}>PT</button>
             </div>
@@ -788,22 +814,24 @@ export default function Exploration() {
            
            {shieldLevel > 0 && (<motion.div layout className="absolute inset-0 rounded-full bg-cyan-400/20 blur-xl -z-10 animate-pulse" style={{ boxShadow: `0 0 ${shieldGlow}px rgba(34,211,238,0.6)` }} />)}
            
+           {shipHealth <= 40 && !gameOver && !hasWon && (
+             <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.6, 1, 0.6] }} transition={{ repeat: Infinity, duration: 0.5 }} className="absolute -bottom-2 text-orange-500 drop-shadow-[0_0_15px_red] z-50">
+                <Flame size={36} />
+             </motion.div>
+           )}
+
            <div className="relative flex flex-col items-center z-30 drop-shadow-[0_0_15px_cyan]">
-              {/* ARMADURA DINÂMICA VIA CSS */}
               {armorLevel >= 3 && <div className="absolute -left-3 top-1/2 w-1 h-10 bg-slate-400 rounded-full" />}
               {armorLevel >= 3 && <div className="absolute -right-3 top-1/2 w-1 h-10 bg-slate-400 rounded-full" />}
               
-              {/* CANHÕES DE LASER DINÂMICOS */}
               {laserLevel >= 3 && <div className="absolute -left-1 top-4 w-1 h-6 bg-cyan-400 rounded-t-full shadow-[0_0_10px_cyan]" />}
               {laserLevel >= 3 && <div className="absolute -right-1 top-4 w-1 h-6 bg-cyan-400 rounded-t-full shadow-[0_0_10px_cyan]" />}
               
-              {/* CHASSI DA NAVE VIA CSS (Sem dependência de imagem externa) */}
               <div className="w-0 h-0 border-l-[12px] border-r-[12px] border-b-[24px] border-transparent border-b-slate-200"></div>
               <div className="w-6 h-10 bg-slate-800 rounded-b-lg border-x-2 border-b-2 border-slate-500 flex items-center justify-center">
                  <div className="w-2 h-4 bg-cyan-500/50 rounded-full blur-[1px]"></div>
               </div>
 
-              {/* COMPARTIMENTO DE CARGA DINÂMICO */}
               {cargoLevel >= 3 && <div className="absolute -bottom-2 w-8 h-3 bg-purple-800 border border-purple-400 rounded-sm z-40"></div>}
            </div>
 
@@ -874,7 +902,9 @@ export default function Exploration() {
         </AnimatePresence>
       </main>
 
-      <ShopModal isOpen={isShopOpen} onClose={() => { setIsShopOpen(false); if(tutorialStep === 18) setTutorialStep(19); }} t={t} laserLevel={laserLevel} radarLevel={radarLevel} droneLevel={droneLevel} cargoLevel={cargoLevel} shieldLevel={shieldLevel} engineLevel={engineLevel} armorLevel={armorLevel} coreLevel={coreLevel} scoopLevel={scoopLevel} turretLevel={turretLevel} regolith={regolith} ice={ice} parts={parts} />
+      <ShopModal isOpen={isShopOpen} onClose={() => { setIsShopOpen(false); if(tutorialStep === 17) setTutorialStep(18); }} t={t} laserLevel={laserLevel} radarLevel={radarLevel} droneLevel={droneLevel} cargoLevel={cargoLevel} shieldLevel={shieldLevel} engineLevel={engineLevel} armorLevel={armorLevel} coreLevel={coreLevel} scoopLevel={scoopLevel} turretLevel={turretLevel} regolith={regolith} ice={ice} parts={parts} />
+      
+      <LogbookModal isOpen={isLogbookOpen} onClose={() => setIsLogbookOpen(false)} t={t} unlockedEvents={unlockedEvents} lang={lang} gameEvents={GAME_EVENTS} />
 
       <AnimatePresence>
         {activeEvent && (
@@ -1009,4 +1039,4 @@ export default function Exploration() {
 
     </motion.div>
   );
-}
+}o
