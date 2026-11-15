@@ -1,15 +1,24 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type MissionStatus = 'jogando' | 'vitoria' | 'derrota';
-export type SimSpeed = 1 | 2 | 4;
-export type CrewStatus = 'ativo' | 'descansando' | 'incapacitado';
+export type TutorialStepId = 
+  | 'SUPPLIES_ARRIVAL' | 'HUD_RESOURCES' | 'CREW_INTRO' 
+  | 'BUILD_HABITAT' | 'ASSIGN_ENGINEER' | 'ACTIVATE_SIMULATION' 
+  | 'WAIT_PROGRESS' | 'EXPLORATION_INTRO' | 'RESEARCH_INTRO' | 'COMPLETED';
+
+export type AssignmentTarget = 'building' | 'upgrade' | 'research' | 'expedition';
+
+export type PendingTask = {
+  type: AssignmentTarget;
+  targetId: string;
+  title: string;
+  data: any;
+};
 
 export interface Inventory {
   regolith: number;
   ice: number;
   parts: number;
-  solarPower: number;
 }
 
 export interface BaseIndicators {
@@ -26,39 +35,16 @@ export interface CrewMember {
   role: string;
   health: number;
   energy: number;
-  status: CrewStatus;
-}
-
-export interface ExpeditionChoice {
-  text: string;
-  cost?: Partial<Inventory>;
-  dmg?: { type: keyof BaseIndicators | 'rover'; amount: number };
-  reward?: Partial<Inventory>;
-}
-
-export interface ExpeditionEvent {
-  id: string;
-  title: string;
-  desc: string;
-  options: ExpeditionChoice[];
-}
-
-export interface ActiveExpedition {
-  id: string;
-  name: string;
-  progress: number; // 0 a 100
-  duration: number;
-  reward: Partial<Inventory>;
-  status: 'ida' | 'evento' | 'retorno';
-  currentEvent: ExpeditionEvent | null;
-  roverHealth: number;
+  status: 'ativo' | 'descansando' | 'incapacitado';
+  assignment: { type: AssignmentTarget, targetId: string } | null;
 }
 
 export interface GameState {
-  missionStatus: MissionStatus;
-  
-  // Exploração Legada
+  language: string;
+  setLanguage: (lang: string) => void;
   inventory: Inventory;
+  indicators: BaseIndicators;
+  
   laserLevel: number;
   radarLevel: number;
   droneLevel: number;
@@ -70,347 +56,470 @@ export interface GameState {
   scoopLevel: number;
   turretLevel: number;
   
-  collectResource: (resource: keyof Inventory, amount: number) => void;
-  upgradeLaser: () => void;
-  upgradeRadar: () => void;
-  upgradeDrones: () => void;
-  upgradeCargo: () => void;
-  updateIndicator: (indicator: keyof BaseIndicators, amount: number) => void;
-  upgradeEquipment: (equipment: keyof GameState, cost: Partial<Inventory>) => void;
+  updateIndicator: (type: keyof BaseIndicators, amount: number) => void;
+  upgradeEquipment: (equipment: string, cost: Partial<Inventory>) => void;
   
-  // Base Builder
-  builtModules: string[];
-  moduleLevels: Record<string, number>; 
-  buildingModules: { id: string; progress: number }[];
-  upgradingModules: { id: string; progress: number }[];
-  
-  clock: { day: number; h: number; m: number };
-  indicators: BaseIndicators;
-  simSpeed: SimSpeed;
+  clock: { h: number, m: number, day: number };
   isPaused: boolean;
+  simSpeed: number;
+  
   crew: CrewMember[];
+  
+  moduleLevels: Record<string, number>;
+  builtModules: string[];
+  buildingModules: { id: string, progress: number, cost: Partial<Inventory> }[];
+  upgradingModules: { id: string, progress: number, cost: Partial<Inventory> }[];
+  
   research: string[];
-  activeExpedition: ActiveExpedition | null;
-  dayObjectives: number; 
+  activeResearch: { id: string, progress: number, duration: number } | null;
+  activeExpedition: { id: string, progress: number, status: string, duration: number, currentEvent?: any, expData?: any } | null;
+  
+  notifications: any[];
+  missionStatus: 'jogando' | 'vitoria' | 'derrota';
+  
+  pendingTask: PendingTask | null;
 
-  setSimSpeed: (speed: SimSpeed) => void;
+  tutorialStep: TutorialStepId;
+  isTrainingMode: boolean;
+  preTutorialInventory: Inventory | null;
+
+  setPendingTask: (task: PendingTask | null) => void;
+  startTutorial: () => void;
+  advanceTutorial: (step: TutorialStepId) => void;
+  endTutorial: () => void;
+  setTutorialStep: (step: TutorialStepId) => void;
+
   togglePause: (force?: boolean) => void;
+  setSimSpeed: (speed: number) => void;
+  setCrewStatus: (id: string, status: CrewMember['status']) => void;
+  assignCrew: (id: string, assignment: CrewMember['assignment']) => void;
+  unassignCrew: (id: string) => void;
+  collectResource: (type: keyof Inventory, amount: number) => void;
+  applyEventDamage: (dmg: { type: keyof BaseIndicators, amount: number }) => void;
   
-  startBuilding: (moduleId: string, cost: Partial<Inventory>) => void;
-  progressBuildings: (amount: number) => void;
-  startUpgrade: (moduleId: string, cost: Partial<Inventory>) => void;
-  progressUpgrades: (amount: number) => void;
-  
-  unlockResearch: (researchId: string, cost: number) => void;
+  startBuilding: (id: string, cost: Partial<Inventory>) => void;
+  startUpgrade: (id: string, cost: Partial<Inventory>) => void;
+  startResearch: (id: string, cost: number, duration: number) => void;
   startExpedition: (exp: any) => void;
-  progressExpedition: (amount: number) => void;
-  resolveExpeditionEvent: (choice: ExpeditionChoice) => void;
-  
-  tickBase: () => void;
-  applyEventDamage: (dmg: { type: keyof BaseIndicators; amount: number }) => void;
-  setCrewStatus: (crewId: string, status: CrewStatus) => void;
-  
+  resolveExpeditionEvent: (option: any) => void;
+  removeNotification: (id: string) => void;
   resetGame: () => void;
+  
+  tickSimulation: () => void;
 }
-
-const INITIAL_INVENTORY: Inventory = { regolith: 0, ice: 0, parts: 0, solarPower: 0 };
-const INITIAL_INDICATORS: BaseIndicators = { o2: 100, water: 100, food: 100, energy: 100, shield: 100 };
-const INITIAL_CREW: CrewMember[] = [
-  { id: 'c1', name: 'Cmd. Hayes', role: 'Comandante', health: 100, energy: 100, status: 'ativo' },
-  { id: 'c2', name: 'Eng. Torres', role: 'Engenheiro', health: 100, energy: 100, status: 'ativo' },
-  { id: 'c3', name: 'Dr. Vance', role: 'Médico', health: 100, energy: 100, status: 'ativo' },
-  { id: 'c4', name: 'Bio. Sato', role: 'Astrobiólogo', health: 100, energy: 100, status: 'ativo' }
-];
 
 export const useGameStore = create<GameState>()(
   persist(
     (set, get) => ({
-      missionStatus: 'jogando',
+      language: 'pt',
+      setLanguage: (lang) => set({ language: lang }),
       
-      inventory: { ...INITIAL_INVENTORY },
-      laserLevel: 1, radarLevel: 1, droneLevel: 0, cargoLevel: 1,
-      shieldLevel: 0, engineLevel: 1, armorLevel: 0, coreLevel: 1, scoopLevel: 0, turretLevel: 0,
+      inventory: { regolith: 0, ice: 0, parts: 0 }, 
+      indicators: { o2: 100, water: 100, food: 100, energy: 100, shield: 100 },
+      
+      laserLevel: 1, radarLevel: 1, droneLevel: 0, cargoLevel: 1, shieldLevel: 0, 
+      engineLevel: 1, armorLevel: 0, coreLevel: 1, scoopLevel: 0, turretLevel: 0,
 
+      updateIndicator: (type, amount) => set(s => ({
+        indicators: { ...s.indicators, [type]: Math.min(100, Math.max(0, s.indicators[type] + amount)) }
+      })),
+
+      upgradeEquipment: (equipment, cost) => set(s => {
+        const currentLevel = (s as any)[equipment] as number;
+        const nextState: any = { [equipment]: currentLevel + 1 };
+        
+        if (!s.isTrainingMode) {
+          nextState.inventory = {
+            regolith: s.inventory.regolith - (cost.regolith || 0),
+            ice: s.inventory.ice - (cost.ice || 0),
+            parts: s.inventory.parts - (cost.parts || 0)
+          };
+        }
+        return nextState;
+      }),
+
+      clock: { h: 6, m: 0, day: 1 },
+      isPaused: true,
+      simSpeed: 1,
+
+      crew: [
+        { id: '1', name: 'Cmd. Hayes', role: 'Comandante', health: 100, energy: 100, status: 'ativo', assignment: null },
+        { id: '2', name: 'Eng. Torres', role: 'Engenheiro', health: 100, energy: 100, status: 'ativo', assignment: null },
+        { id: '3', name: 'Dr. Vance', role: 'Médico', health: 100, energy: 100, status: 'ativo', assignment: null },
+        { id: '4', name: 'Bio. Sato', role: 'Astrobiólogo', health: 100, energy: 100, status: 'ativo', assignment: null }
+      ],
+      
+      moduleLevels: {},
       builtModules: [],
-      moduleLevels: {}, 
       buildingModules: [],
       upgradingModules: [],
       
-      clock: { day: 1, h: 8, m: 0 },
-      indicators: { ...INITIAL_INDICATORS },
-      simSpeed: 1,
-      isPaused: true,
-      crew: INITIAL_CREW,
       research: [],
+      activeResearch: null,
       activeExpedition: null,
-      dayObjectives: 1,
+      
+      notifications: [],
+      missionStatus: 'jogando',
+      pendingTask: null,
 
-      collectResource: (resource, amount) => set((state) => ({
-        inventory: { ...state.inventory, [resource]: Math.max(0, state.inventory[resource] + amount) }
-      })),
+      tutorialStep: 'SUPPLIES_ARRIVAL',
+      isTrainingMode: false,
+      preTutorialInventory: null,
 
-      upgradeLaser: () => set((state) => ({ laserLevel: state.laserLevel + 1 })),
-      upgradeRadar: () => set((state) => ({ radarLevel: state.radarLevel + 1 })),
-      upgradeDrones: () => set((state) => ({ droneLevel: state.droneLevel + 1 })),
-      upgradeCargo: () => set((state) => ({ cargoLevel: state.cargoLevel + 1 })),
+      setPendingTask: (task) => set({ pendingTask: task }),
 
-      upgradeEquipment: (equipment, cost) => set((state) => {
-        const newInv = { ...state.inventory };
-        if (cost.regolith) newInv.regolith -= cost.regolith;
-        if (cost.ice) newInv.ice -= cost.ice;
-        if (cost.parts) newInv.parts -= cost.parts;
-        return { inventory: newInv, [equipment]: (state[equipment as keyof GameState] as number) + 1 };
+      startTutorial: () => set((state) => {
+        if (state.isTrainingMode) return state; 
+        
+        return {
+          tutorialStep: 'SUPPLIES_ARRIVAL',
+          isTrainingMode: true,
+          preTutorialInventory: { ...state.inventory }, 
+          inventory: { regolith: 99999999, ice: 99999999, parts: 99999999 }
+        };
       }),
 
-      updateIndicator: (indicator, amount) => set((state) => ({
-        indicators: { ...state.indicators, [indicator]: Math.max(0, Math.min(100, state.indicators[indicator] + amount)) }
-      })),
+      advanceTutorial: (step) => set({ tutorialStep: step }),
 
+      // =========================================================
+      // O SEGREDO DO RESET INTELIGENTE ESTÁ AQUI
+      // =========================================================
+      endTutorial: () => set((state) => {
+        // Pega a fotografia tirada antes do tutorial
+        const inherited = state.preTutorialInventory || { regolith: 0, ice: 0, parts: 0 };
+        
+        // KIT DE EMERGÊNCIA: Se o jogador pulou a fase da Nave para testar
+        // ou se a criança coletou muito pouco, garantimos um mínimo vital usando Math.max!
+        const finalInv = {
+          regolith: Math.max(150, inherited.regolith),
+          ice: Math.max(50, inherited.ice),
+          parts: Math.max(20, inherited.parts)
+        };
+
+        return {
+          tutorialStep: 'COMPLETED',
+          isTrainingMode: false,
+          inventory: finalInv, 
+          preTutorialInventory: null, 
+          
+          indicators: { o2: 100, water: 100, food: 100, energy: 100, shield: 100 },
+          clock: { h: 6, m: 0, day: 1 }, 
+          isPaused: true, 
+          builtModules: [], 
+          moduleLevels: {},
+          buildingModules: [],
+          upgradingModules: [],
+          research: [],
+          activeResearch: null,
+          activeExpedition: null,
+          pendingTask: null,
+          notifications: [],
+          crew: [ 
+            { id: '1', name: 'Cmd. Hayes', role: 'Comandante', health: 100, energy: 100, status: 'ativo', assignment: null },
+            { id: '2', name: 'Eng. Torres', role: 'Engenheiro', health: 100, energy: 100, status: 'ativo', assignment: null },
+            { id: '3', name: 'Dr. Vance', role: 'Médico', health: 100, energy: 100, status: 'ativo', assignment: null },
+            { id: '4', name: 'Bio. Sato', role: 'Astrobiólogo', health: 100, energy: 100, status: 'ativo', assignment: null }
+          ]
+        };
+      }),
+
+      setTutorialStep: (step) => set({ tutorialStep: step }),
+      togglePause: (force) => set(s => ({ isPaused: force !== undefined ? force : !s.isPaused })),
       setSimSpeed: (speed) => set({ simSpeed: speed }),
-      togglePause: (force) => set((state) => ({ isPaused: force !== undefined ? force : !state.isPaused })),
-
-      startBuilding: (moduleId, cost) => set((state) => {
-        const newInv = { ...state.inventory };
-        if (cost.regolith) newInv.regolith -= cost.regolith;
-        if (cost.ice) newInv.ice -= cost.ice;
-        if (cost.parts) newInv.parts -= cost.parts;
-        return { inventory: newInv, buildingModules: [...state.buildingModules, { id: moduleId, progress: 0 }] };
-      }),
-
-      progressBuildings: (amount) => set((state) => {
-        const newBuiltModules = [...state.builtModules];
-        const newModuleLevels = { ...state.moduleLevels };
-        const engBonus = state.research.includes('r_bots') ? 1.5 : 1.0;
-        
-        const updated = state.buildingModules.map(b => {
-          const next = b.progress + (amount * engBonus);
-          if (next >= 100) {
-            newBuiltModules.push(b.id);
-            newModuleLevels[b.id] = 1; 
-          }
-          return { ...b, progress: next };
-        }).filter(b => b.progress < 100);
-        
-        return { buildingModules: updated, builtModules: newBuiltModules, moduleLevels: newModuleLevels };
-      }),
-
-      startUpgrade: (moduleId, cost) => set((state) => {
-        const newInv = { ...state.inventory };
-        if (cost.regolith) newInv.regolith -= cost.regolith;
-        if (cost.ice) newInv.ice -= cost.ice;
-        if (cost.parts) newInv.parts -= cost.parts;
-        return { inventory: newInv, upgradingModules: [...(state.upgradingModules || []), { id: moduleId, progress: 0 }] };
-      }),
-
-      progressUpgrades: (amount) => set((state) => {
-        const newModuleLevels = { ...state.moduleLevels };
-        const engBonus = state.research.includes('r_bots') ? 1.5 : 1.0;
-        
-        const updated = (state.upgradingModules || []).map(u => {
-          const next = u.progress + (amount * engBonus);
-          if (next >= 100) {
-            newModuleLevels[u.id] = (newModuleLevels[u.id] || 1) + 1;
-          }
-          return { ...u, progress: next };
-        }).filter(u => u.progress < 100);
-        
-        return { upgradingModules: updated, moduleLevels: newModuleLevels };
-      }),
-
-      unlockResearch: (researchId, costParts) => set((state) => ({
-        inventory: { ...state.inventory, parts: state.inventory.parts - costParts },
-        research: [...state.research, researchId]
+      
+      setCrewStatus: (id, status) => set(s => ({
+        crew: s.crew.map(c => c.id === id ? { ...c, status } : c)
       })),
 
-      startExpedition: (exp) => set((state) => ({ 
-        activeExpedition: { 
-          ...exp, progress: 0, status: 'ida', currentEvent: null, roverHealth: 100 
-        } 
+      assignCrew: (id, assignment) => set(s => ({
+        crew: s.crew.map(c => c.id === id ? { ...c, assignment } : c)
       })),
 
-      progressExpedition: (amount) => set((state) => {
-        const exp = state.activeExpedition;
-        if (!exp || exp.status === 'evento') return state;
+      unassignCrew: (id) => set(s => ({
+        crew: s.crew.map(c => c.id === id ? { ...c, assignment: null } : c)
+      })),
 
-        // Converte o "amount" (ticks) em progresso percentual (0-100)
-        const progressIncrement = (amount / exp.duration) * 100;
-        const nextProgress = exp.progress + progressIncrement;
+      collectResource: (type, amount) => set(s => ({
+        inventory: { ...s.inventory, [type]: Math.max(0, s.inventory[type] + amount) }
+      })),
 
-        // Switch Ida / Retorno
-        let nextStatus = exp.status;
-        if (nextProgress >= 50 && exp.status === 'ida') {
-           nextStatus = 'retorno';
+      applyEventDamage: (dmg) => set(s => ({
+        indicators: { ...s.indicators, [dmg.type]: Math.max(0, s.indicators[dmg.type] - dmg.amount) }
+      })),
+
+      startBuilding: (id, cost) => set(s => {
+        const nextState: any = { buildingModules: [...s.buildingModules, { id, progress: 0, cost }] };
+        if (!s.isTrainingMode) {
+          nextState.inventory = {
+            regolith: s.inventory.regolith - (cost.regolith || 0),
+            ice: s.inventory.ice - (cost.ice || 0),
+            parts: s.inventory.parts - (cost.parts || 0)
+          };
         }
-
-        // Sistema de Eventos Aleatórios durante a expedição
-        let nextEvent = exp.currentEvent;
-        if (Math.random() < 0.02 && nextProgress > 10 && nextProgress < 90) {
-           // Sorteia evento se não houver um
-           nextStatus = 'evento';
-           nextEvent = {
-             id: 'rand_ev',
-             title: 'OBSTÁCULO DETECTADO!',
-             desc: 'O rover encontrou terreno perigoso bloqueando a rota principal.',
-             options: [
-               { text: 'Desviar (Atrasa a missão)', cost: {}, dmg: { type: 'rover', amount: 0 } },
-               { text: 'Forçar Passagem (Risco de Dano)', cost: {}, dmg: { type: 'rover', amount: 25 }, reward: { regolith: 15 } }
-             ]
-           };
-        }
-
-        // Fim da expedição
-        if (nextProgress >= 100) {
-          const rew = exp.reward;
-          const newInv = { ...state.inventory };
-          if (rew.regolith) newInv.regolith += rew.regolith;
-          if (rew.ice) newInv.ice += rew.ice;
-          if (rew.parts) newInv.parts += rew.parts;
-          return { inventory: newInv, activeExpedition: null };
-        }
-
-        return { activeExpedition: { ...exp, progress: nextProgress, status: nextStatus, currentEvent: nextEvent } };
+        return nextState;
       }),
 
-      resolveExpeditionEvent: (choice) => set((state) => {
-        const exp = state.activeExpedition;
-        if (!exp) return state;
-
-        const newInv = { ...state.inventory };
-        if (choice.cost?.regolith) newInv.regolith -= choice.cost.regolith;
-        if (choice.cost?.ice) newInv.ice -= choice.cost.ice;
-        if (choice.cost?.parts) newInv.parts -= choice.cost.parts;
-
-        if (choice.reward?.regolith) newInv.regolith += choice.reward.regolith;
-        if (choice.reward?.ice) newInv.ice += choice.reward.ice;
-        if (choice.reward?.parts) newInv.parts += choice.reward.parts;
-
-        let newRoverHealth = exp.roverHealth;
-        if (choice.dmg && choice.dmg.type === 'rover') {
-           newRoverHealth -= choice.dmg.amount;
+      startUpgrade: (id, cost) => set(s => {
+        const nextState: any = { upgradingModules: [...s.upgradingModules, { id, progress: 0, cost }] };
+        if (!s.isTrainingMode) {
+          nextState.inventory = {
+            regolith: s.inventory.regolith - (cost.regolith || 0),
+            ice: s.inventory.ice - (cost.ice || 0),
+            parts: s.inventory.parts - (cost.parts || 0)
+          };
         }
+        return nextState;
+      }),
 
-        // Se o rover quebrar, falha a expedição
-        if (newRoverHealth <= 0) {
-           return { inventory: newInv, activeExpedition: null };
+      startResearch: (id, cost, duration) => set(s => {
+        const nextState: any = { activeResearch: { id, progress: 0, duration } };
+        if (!s.isTrainingMode) {
+          nextState.inventory = { ...s.inventory, parts: s.inventory.parts - cost };
         }
+        return nextState;
+      }),
 
+      startExpedition: (exp) => set({
+        activeExpedition: { id: exp.id, progress: 0, status: 'ida', duration: exp.duration, expData: exp }
+      }),
+
+      resolveExpeditionEvent: (option) => set(s => {
+        if (!s.activeExpedition) return s;
         return { 
-          inventory: newInv, 
-          activeExpedition: { 
-            ...exp, 
-            status: exp.progress >= 50 ? 'retorno' : 'ida', 
-            currentEvent: null, 
-            roverHealth: newRoverHealth 
-          } 
+          activeExpedition: { ...s.activeExpedition, status: 'ida', currentEvent: undefined },
+          isPaused: false
         };
       }),
 
-      applyEventDamage: (dmg) => set((state) => {
-        const shieldLvl = state.moduleLevels['radiation'] || 0;
-        const mitigation = shieldLvl === 2 ? 0.8 : shieldLvl === 3 ? 0.5 : 1; 
-        const finalDmg = dmg.type === 'shield' ? dmg.amount : dmg.amount * mitigation;
-        return {
-          indicators: { ...state.indicators, [dmg.type]: Math.max(0, state.indicators[dmg.type as keyof BaseIndicators] - finalDmg) }
-        };
-      }),
-
-      setCrewStatus: (crewId, status) => set((state) => ({
-        crew: state.crew.map(c => {
-          if (c.id !== crewId) return c;
-          if (c.status === 'incapacitado' && status !== 'incapacitado') return c; // Somente cura tira do incapacitado
-          return { ...c, status };
-        })
+      removeNotification: (id) => set(s => ({
+        notifications: s.notifications.filter(n => n.id !== id)
       })),
-
-      tickBase: () => set((state) => {
-        if (state.missionStatus !== 'jogando') return state;
-
-        let { day, h, m } = state.clock;
-        m += 10; 
-        if (m >= 60) { m = 0; h++; }
-        if (h >= 24) { h = 0; day++; }
-
-        let { o2, water, food, energy, shield } = state.indicators;
-        const levels = state.moduleLevels || {};
-        const baseDrain = 0.15; 
-        
-        const habLvl = levels['habitat'] || 0;
-        const o2Drain = habLvl === 0 ? baseDrain : habLvl === 1 ? 0 : habLvl >= 2 ? -0.1 : 0;
-        
-        const purLvl = levels['purifier'] || 0;
-        const waterDrain = purLvl === 0 ? baseDrain : purLvl === 1 ? 0.05 : purLvl >= 2 ? -0.05 : 0;
-        
-        const farmLvl = levels['greenhouse'] || 0;
-        const foodDrain = farmLvl === 0 ? baseDrain : farmLvl === 1 ? 0.05 : farmLvl >= 2 ? -0.1 : 0;
-        
-        const solLvl = levels['solar'] || 0;
-        const energyDrain = solLvl === 0 ? baseDrain : solLvl === 1 ? 0 : solLvl >= 2 ? -0.2 : 0;
-
-        o2 = Math.min(100, Math.max(0, o2 - o2Drain));
-        water = Math.min(100, Math.max(0, water - waterDrain));
-        food = Math.min(100, Math.max(0, food - foodDrain));
-        energy = Math.min(100, Math.max(0, energy - energyDrain));
-
-        const medLvl = levels['medical'] || 0;
-        const dormLvl = levels['dormitory'] || 0;
-
-        let newCrew = state.crew.map(c => {
-          let newHealth = c.health;
-          let newEnergy = c.energy;
-
-          if (o2 < 10 || food < 10 || water < 10) {
-            newHealth = Math.max(0, newHealth - 0.2);
-          }
-
-          if (c.status === 'ativo') {
-            newEnergy = Math.max(0, newEnergy - 0.1);
-          } else if (c.status === 'descansando') {
-            const energyRecovery = dormLvl === 3 ? 0.8 : dormLvl === 2 ? 0.5 : dormLvl === 1 ? 0.3 : 0.15;
-            newEnergy = Math.min(100, newEnergy + energyRecovery);
-            
-            if (medLvl > 0 || habLvl === 3) {
-              const healthRecovery = medLvl === 3 ? 0.5 : medLvl === 2 ? 0.3 : medLvl === 1 ? 0.15 : 0.05;
-              newHealth = Math.min(100, newHealth + healthRecovery);
-            }
-          }
-
-          const forcedStatus = newHealth <= 0 ? 'incapacitado' : newEnergy <= 0 ? 'descansando' : c.status;
-          return { ...c, health: newHealth, energy: newEnergy, status: forcedStatus };
-        });
-
-        const isDead = newCrew.every(c => c.health === 0) || o2 === 0;
-        let status = state.missionStatus;
-        if (isDead) status = 'derrota';
-        if (day > 7) status = 'vitoria';
-
-        return {
-          clock: { day, h, m },
-          indicators: { o2, water, food, energy, shield },
-          crew: newCrew,
-          missionStatus: status,
-          dayObjectives: Math.max(state.dayObjectives, day)
-        };
-      }),
 
       resetGame: () => set({
-        inventory: { ...INITIAL_INVENTORY },
-        laserLevel: 1, radarLevel: 1, droneLevel: 0, cargoLevel: 1,
-        shieldLevel: 0, engineLevel: 1, armorLevel: 0, coreLevel: 1, scoopLevel: 0, turretLevel: 0,
-        builtModules: [], moduleLevels: {}, buildingModules: [], upgradingModules: [], research: [], activeExpedition: null,
-        indicators: { ...INITIAL_INDICATORS }, crew: INITIAL_CREW,
-        clock: { day: 1, h: 8, m: 0 }, missionStatus: 'jogando', dayObjectives: 1, isPaused: true
+        inventory: { regolith: 0, ice: 0, parts: 0 },
+        indicators: { o2: 100, water: 100, food: 100, energy: 100, shield: 100 },
+        laserLevel: 1, radarLevel: 1, droneLevel: 0, cargoLevel: 1, shieldLevel: 0, engineLevel: 1, armorLevel: 0, coreLevel: 1, scoopLevel: 0, turretLevel: 0,
+        clock: { h: 6, m: 0, day: 1 },
+        isPaused: true,
+        crew: [
+          { id: '1', name: 'Cmd. Hayes', role: 'Comandante', health: 100, energy: 100, status: 'ativo', assignment: null },
+          { id: '2', name: 'Eng. Torres', role: 'Engenheiro', health: 100, energy: 100, status: 'ativo', assignment: null },
+          { id: '3', name: 'Dr. Vance', role: 'Médico', health: 100, energy: 100, status: 'ativo', assignment: null },
+          { id: '4', name: 'Bio. Sato', role: 'Astrobiólogo', health: 100, energy: 100, status: 'ativo', assignment: null }
+        ],
+        moduleLevels: {},
+        builtModules: [],
+        buildingModules: [],
+        upgradingModules: [],
+        research: [],
+        activeResearch: null,
+        activeExpedition: null,
+        notifications: [],
+        missionStatus: 'jogando',
+        pendingTask: null,
+        tutorialStep: 'SUPPLIES_ARRIVAL',
+        isTrainingMode: false,
+        preTutorialInventory: null
+      }),
+
+      tickSimulation: () => set(s => {
+        if (s.isPaused) return s;
+
+        const nextState = { ...s };
+        const speedMultiplier = s.simSpeed * 2;
+        
+        let newM = s.clock.m + speedMultiplier;
+        let newH = s.clock.h;
+        let newDay = s.clock.day;
+        if (newM >= 60) {
+          newH += Math.floor(newM / 60);
+          newM = newM % 60;
+        }
+        if (newH >= 24) {
+          newDay += Math.floor(newH / 24);
+          newH = newH % 24;
+        }
+        nextState.clock = { h: newH, m: newM, day: newDay };
+
+        if (s.buildingModules.length > 0) {
+          nextState.buildingModules = s.buildingModules.map(mod => {
+            const hasEngineer = s.crew.some(c => c.assignment?.targetId === mod.id && c.role === 'Engenheiro');
+            let buildSpeed = hasEngineer ? speedMultiplier * 1.5 : speedMultiplier;
+            if (s.isTrainingMode) buildSpeed *= 15; 
+            return { ...mod, progress: Math.min(100, mod.progress + buildSpeed) };
+          });
+
+          const finished = nextState.buildingModules.filter(m => m.progress >= 100);
+          if (finished.length > 0) {
+            nextState.builtModules = [...s.builtModules, ...finished.map(m => m.id)];
+            finished.forEach(m => {
+              nextState.moduleLevels = { ...nextState.moduleLevels, [m.id]: 1 };
+              nextState.crew = nextState.crew.map(c => c.assignment?.targetId === m.id ? { ...c, assignment: null } : c);
+              nextState.notifications = [...nextState.notifications, {
+                id: Date.now().toString() + Math.random(),
+                type: 'success',
+                title: 'CONSTRUÇÃO FINALIZADA',
+                message: `Novo módulo construído com sucesso!`
+              }];
+            });
+            nextState.buildingModules = nextState.buildingModules.filter(m => m.progress < 100);
+          }
+        }
+
+        if (s.upgradingModules.length > 0) {
+          nextState.upgradingModules = s.upgradingModules.map(mod => {
+            const hasEngineer = s.crew.some(c => c.assignment?.targetId === mod.id && c.role === 'Engenheiro');
+            let buildSpeed = hasEngineer ? speedMultiplier * 1.5 : speedMultiplier;
+            if (s.isTrainingMode) buildSpeed *= 15;
+            return { ...mod, progress: Math.min(100, mod.progress + buildSpeed) };
+          });
+
+          const finishedUpgrades = nextState.upgradingModules.filter(m => m.progress >= 100);
+          if (finishedUpgrades.length > 0) {
+            finishedUpgrades.forEach(m => {
+              nextState.moduleLevels = { ...nextState.moduleLevels, [m.id]: (nextState.moduleLevels[m.id] || 1) + 1 };
+              nextState.crew = nextState.crew.map(c => c.assignment?.targetId === m.id ? { ...c, assignment: null } : c);
+              nextState.notifications = [...nextState.notifications, {
+                id: Date.now().toString() + Math.random(),
+                type: 'success',
+                title: 'MELHORIA FINALIZADA',
+                message: `O módulo foi aprimorado com sucesso!`
+              }];
+            });
+            nextState.upgradingModules = nextState.upgradingModules.filter(m => m.progress < 100);
+          }
+        }
+
+        if (s.activeResearch) {
+          const res = s.activeResearch;
+          const hasBio = s.crew.some(c => c.assignment?.targetId === res.id && c.role === 'Astrobiólogo');
+          let resSpeed = hasBio ? speedMultiplier * 1.5 : speedMultiplier;
+          if (s.isTrainingMode) resSpeed *= 15;
+          
+          const increment = resSpeed * (100 / (res.duration || 100));
+          const newProg = res.progress + increment;
+          
+          if (newProg >= 100) {
+            nextState.research = [...s.research, res.id];
+            nextState.activeResearch = null;
+            nextState.crew = nextState.crew.map(c => c.assignment?.targetId === res.id ? { ...c, assignment: null } : c);
+            nextState.notifications = [...nextState.notifications, {
+              id: Date.now().toString() + Math.random(),
+              type: 'info',
+              title: 'PESQUISA CONCLUÍDA',
+              message: `Nova tecnologia desbloqueada!`
+            }];
+          } else {
+            nextState.activeResearch = { ...res, progress: newProg };
+          }
+        }
+
+        if (s.activeExpedition && s.activeExpedition.status !== 'evento') {
+          const exp = s.activeExpedition;
+          const hasCmd = s.crew.some(c => c.assignment?.targetId === exp.id && (c.role === 'Comandante' || c.role === 'Astrobiólogo'));
+          let expSpeed = hasCmd ? speedMultiplier * 1.5 : speedMultiplier;
+          if (s.isTrainingMode) expSpeed *= 15; 
+          
+          const increment = expSpeed * (100 / (exp.duration || 100));
+          const newProg = exp.progress + increment;
+          
+          if (newProg >= 100) {
+             const rew = exp.expData?.reward || {};
+             nextState.inventory = {
+               regolith: nextState.inventory.regolith + (rew.regolith || 0),
+               ice: nextState.inventory.ice + (rew.ice || 0),
+               parts: nextState.inventory.parts + (rew.parts || 0)
+             };
+             nextState.notifications = [...nextState.notifications, {
+               id: Date.now().toString() + Math.random(),
+               type: 'success',
+               title: 'MISSÃO CONCLUÍDA',
+               message: `O rover regressou de ${exp.expData?.name || 'sua missão'}!`,
+               rewards: rew
+             }];
+             nextState.activeExpedition = null;
+             nextState.crew = nextState.crew.map(c => c.assignment?.targetId === exp.id ? { ...c, assignment: null } : c);
+          } else {
+             const newStatus = newProg < 50 ? 'ida' : 'retorno';
+             nextState.activeExpedition = { ...exp, progress: newProg, status: newStatus };
+          }
+        }
+
+        // 6. MOTOR DE SOBREVIVÊNCIA E FADIGA
+        if (!s.isTrainingMode) {
+          const baseConsumption = (speedMultiplier * 0.1);
+          const o2Regen = (s.moduleLevels['habitat'] || 0) * 0.15;
+          const waterRegen = (s.moduleLevels['purifier'] || 0) * 0.15;
+          const foodRegen = (s.moduleLevels['greenhouse'] || 0) * 0.15;
+          const energyRegen = (s.moduleLevels['solar'] || 0) * 0.15;
+
+          nextState.indicators = {
+            o2: Math.max(0, Math.min(100, s.indicators.o2 - baseConsumption + o2Regen)),
+            water: Math.max(0, Math.min(100, s.indicators.water - baseConsumption + waterRegen)),
+            food: Math.max(0, Math.min(100, s.indicators.food - baseConsumption + foodRegen)),
+            energy: Math.max(0, Math.min(100, s.indicators.energy - baseConsumption + energyRegen)),
+            shield: s.indicators.shield
+          };
+
+          const isSuffocatingOrStarving = nextState.indicators.o2 <= 0 || nextState.indicators.water <= 0 || nextState.indicators.food <= 0;
+
+          nextState.crew = s.crew.map(c => {
+            let newEnergy = c.energy;
+            let newHealth = c.health;
+            let newStatus = c.status;
+            let newAssignment = c.assignment;
+
+            if (c.status === 'incapacitado') {
+              newEnergy = Math.min(100, c.energy + (speedMultiplier * 0.05));
+              if (newEnergy > 20) newStatus = 'descansando';
+            } 
+            else if (c.status === 'descansando') {
+              const dormLevel = s.moduleLevels['dormitory'] || 0;
+              const medLevel = s.moduleLevels['medical'] || 0;
+              
+              const energyRecovery = 0.1 + (dormLevel * 0.15); 
+              newEnergy = Math.min(100, c.energy + (speedMultiplier * energyRecovery));
+              
+              if (medLevel > 0) {
+                newHealth = Math.min(100, c.health + (speedMultiplier * (medLevel * 0.1)));
+              }
+            } 
+            else { 
+              const isWorking = !!c.assignment;
+              const energyDrop = isWorking ? 0.15 : 0.05;
+              newEnergy -= (speedMultiplier * energyDrop);
+            }
+
+            if (isSuffocatingOrStarving) {
+              newHealth -= (speedMultiplier * 0.3);
+            }
+
+            if (newEnergy <= 0) {
+              newEnergy = 0;
+              newStatus = 'incapacitado';
+              newAssignment = null;
+            }
+
+            if (newHealth <= 0) {
+              newHealth = 0;
+              newStatus = 'incapacitado';
+              newAssignment = null; 
+            }
+
+            return { ...c, energy: newEnergy, health: newHealth, status: newStatus, assignment: newAssignment };
+          });
+          
+          if (nextState.crew.every(c => c.status === 'incapacitado' || c.health <= 0)) {
+            nextState.missionStatus = 'derrota';
+            nextState.isPaused = true;
+          }
+        }
+
+        return nextState;
       })
     }),
-    { 
-      name: 'astro-mission-colony-data',
-      merge: (persistedState: any, currentState) => ({
-        ...currentState,
-        ...persistedState,
-        crew: persistedState.crew?.map((c: any) => ({ ...c, status: c.status === 'active' ? 'ativo' : c.status === 'resting' ? 'descansando' : c.status || 'ativo' })) || currentState.crew,
-        moduleLevels: persistedState.moduleLevels || {},
-        upgradingModules: persistedState.upgradingModules || [],
-        missionStatus: persistedState.missionStatus === 'playing' ? 'jogando' : (persistedState.missionStatus === 'defeat' ? 'derrota' : (persistedState.missionStatus === 'victory' ? 'vitoria' : 'jogando'))
-      })
+    {
+      name: 'cuscuz-galactico-save',
     }
   )
 );

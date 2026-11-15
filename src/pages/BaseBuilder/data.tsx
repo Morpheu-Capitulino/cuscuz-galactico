@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { Home, Droplets, Sprout, Sun, Shield, HeartPulse, BedDouble } from 'lucide-react';
 import type { Inventory, BaseIndicators } from '../../store/gameStore';
 
@@ -22,71 +22,71 @@ export const STRUCTURES: StructureDef[] = [
     id: 'habitat', name: 'ABRIGO PRINCIPAL', desc: 'O coração da base! Fornece oxigênio para a equipe.', 
     levels: [
       { effect: 'Suporte de vida básico', cost: { regolith: 100, ice: 0, parts: 25 } },
-      { effect: 'Eficiência de oxigênio melhorada', cost: { regolith: 150, ice: 0, parts: 40 } },
-      { effect: 'Recuperação passiva de saúde', cost: { regolith: 200, ice: 0, parts: 80 } }
+      { effect: 'Eficiência de oxigênio', cost: { regolith: 150, ice: 0, parts: 45 } },
+      { effect: 'Recuperação passiva', cost: { regolith: 220, ice: 0, parts: 85 } }
     ], icon: <Home size={24} /> 
   },
   { 
     id: 'purifier', name: 'FILTRO DE ÁGUA', desc: 'Transforma gelo bruto em água potável.', 
     levels: [
       { effect: 'Reciclagem básica', cost: { regolith: 50, ice: 40, parts: 20 } },
-      { effect: 'Reduz consumo de água', cost: { regolith: 80, ice: 50, parts: 35 } },
-      { effect: 'Eficiência máxima', cost: { regolith: 120, ice: 60, parts: 60 } }
+      { effect: 'Reduz consumo', cost: { regolith: 80, ice: 55, parts: 40 } },
+      { effect: 'Eficiência máxima', cost: { regolith: 120, ice: 70, parts: 65 } }
     ], icon: <Droplets size={24} /> 
   },
   { 
-    id: 'greenhouse', name: 'ESTUFA DE PLANTAS', desc: 'Jardim botânico para cultivar alimentos na Lua.', 
+    id: 'greenhouse', name: 'ESTUFA DE PLANTAS', desc: 'Jardim para cultivar alimentos.', 
     levels: [
       { effect: 'Produção básica', cost: { regolith: 60, ice: 35, parts: 25 } },
-      { effect: 'Produção acelerada', cost: { regolith: 90, ice: 50, parts: 45 } },
-      { effect: 'Super colheita', cost: { regolith: 140, ice: 80, parts: 70 } }
+      { effect: 'Produção acelerada', cost: { regolith: 90, ice: 55, parts: 50 } },
+      { effect: 'Super colheita', cost: { regolith: 150, ice: 85, parts: 75 } }
     ], icon: <Sprout size={24} /> 
   },
   { 
-    id: 'solar', name: 'PAINÉIS SOLARES', desc: 'Matriz solar para manter a base energizada.', 
+    id: 'solar', name: 'PAINÉIS SOLARES', desc: 'Matriz solar para energizar a base.', 
     levels: [
       { effect: 'Geração básica', cost: { regolith: 80, ice: 0, parts: 20 } },
-      { effect: 'Geração melhorada', cost: { regolith: 120, ice: 0, parts: 40 } },
-      { effect: 'Armazenamento extra', cost: { regolith: 180, ice: 0, parts: 75 } }
+      { effect: 'Geração melhorada', cost: { regolith: 120, ice: 0, parts: 45 } },
+      { effect: 'Armazenamento extra', cost: { regolith: 180, ice: 0, parts: 80 } }
     ], icon: <Sun size={24} /> 
   },
   { 
-    id: 'radiation', name: 'ESCUDO PROTETOR', desc: 'Barreira magnética contra radiação e detritos.', 
+    id: 'radiation', name: 'ESCUDO PROTETOR', desc: 'Barreira magnética contra radiação.', 
     levels: [
       { effect: 'Proteção básica', cost: { regolith: 150, ice: 25, parts: 30 } },
-      { effect: 'Resiste a tempestades', cost: { regolith: 200, ice: 50, parts: 50 } },
-      { effect: 'Bloqueio total de radiação', cost: { regolith: 300, ice: 80, parts: 100 } }
+      { effect: 'Resiste a tempestades', cost: { regolith: 220, ice: 55, parts: 55 } },
+      { effect: 'Bloqueio total', cost: { regolith: 320, ice: 90, parts: 110 } }
     ], icon: <Shield size={24} /> 
   },
   { 
     id: 'medical', name: 'ENFERMARIA', desc: 'Módulo hospitalar para a tripulação.', 
     levels: [
       { effect: 'Recuperação médica', cost: { regolith: 90, ice: 30, parts: 50 } },
-      { effect: 'Tratamento rápido', cost: { regolith: 130, ice: 45, parts: 80 } },
-      { effect: 'Regeneração celular', cost: { regolith: 200, ice: 70, parts: 120 } }
+      { effect: 'Tratamento rápido', cost: { regolith: 130, ice: 45, parts: 85 } },
+      { effect: 'Regeneração celular', cost: { regolith: 200, ice: 75, parts: 130 } }
     ], icon: <HeartPulse size={24} /> 
   },
   { 
-    id: 'dormitory', name: 'DORMITÓRIO AVANÇADO', desc: 'Alojamentos para restauração de energia.', 
+    id: 'dormitory', name: 'DORMITÓRIO', desc: 'Alojamentos para restauração de energia.', 
     levels: [
       { effect: 'Descanso básico', cost: { regolith: 70, ice: 20, parts: 40 } },
-      { effect: 'Sono reparador', cost: { regolith: 110, ice: 35, parts: 70 } },
-      { effect: 'Recarga otimizada', cost: { regolith: 160, ice: 50, parts: 100 } }
+      { effect: 'Sono reparador', cost: { regolith: 110, ice: 35, parts: 75 } },
+      { effect: 'Recarga otimizada', cost: { regolith: 160, ice: 55, parts: 105 } }
     ], icon: <BedDouble size={24} /> 
   }
 ];
 
 export const RESEARCH_TREE = [
-  { id: 'r_water', name: 'Super Filtros', desc: 'Desbloqueia melhorias avançadas do Filtro.', cost: 30, req: 'purifier' },
-  { id: 'r_farm', name: 'Agricultura Lunar', desc: 'Sementes geneticamente modificadas.', cost: 40, req: 'greenhouse' },
-  { id: 'r_solar', name: 'Engenharia Avançada', desc: 'Baterias e estruturas otimizadas.', cost: 60, req: 'solar' },
-  { id: 'r_med', name: 'Medicina Espacial', desc: 'Técnicas avançadas de cura.', cost: 45, req: 'medical' },
+  { id: 'r_water', name: 'Super Filtros', desc: 'Desbloqueia melhorias avançadas do Filtro.', cost: 30, req: 'purifier', duration: 80 },
+  { id: 'r_farm', name: 'Agricultura Lunar', desc: 'Sementes geneticamente modificadas.', cost: 40, req: 'greenhouse', duration: 100 },
+  { id: 'r_solar', name: 'Engenharia Avançada', desc: 'Baterias e estruturas otimizadas.', cost: 60, req: 'solar', duration: 120 },
+  { id: 'r_med', name: 'Medicina Espacial', desc: 'Técnicas avançadas de cura celular.', cost: 45, req: 'medical', duration: 90 },
 ];
 
 export const EXPEDITIONS = [
-  { id: 'e1', name: 'Caverna Congelada', desc: 'Uma gruta escura com altas concentrações de gelo de água.', duration: 120, risk: 'Moderado', reward: { ice: 40, regolith: 10 } },
-  { id: 'e2', name: 'Cemitério de Naves', desc: 'Destroços de antigas sondas. Perigoso, mas rico em peças.', duration: 180, risk: 'Alto', reward: { parts: 35, regolith: 20 } },
-  { id: 'e3', name: 'Montanha de Pedras', desc: 'Formação rochosa densa perfeita para mineração de regolito.', duration: 90, risk: 'Baixo', reward: { regolith: 60 } },
+  { id: 'e1', name: 'Caverna Congelada', desc: 'Uma gruta escura com altas concentrações de gelo.', duration: 140, risk: 'Moderado', reward: { ice: 45, regolith: 10 } },
+  { id: 'e2', name: 'Cemitério de Naves', desc: 'Destroços de antigas sondas. Rico em peças.', duration: 200, risk: 'Alto', reward: { parts: 40, regolith: 20 } },
+  { id: 'e3', name: 'Montanha de Pedras', desc: 'Formação rochosa perfeita para mineração.', duration: 110, risk: 'Baixo', reward: { regolith: 65 } },
 ];
 
 export interface BaseEvent {

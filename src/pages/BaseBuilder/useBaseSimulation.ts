@@ -1,48 +1,72 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useGameStore } from '../../store/gameStore';
-import { BASE_EVENTS, type BaseEvent } from './data';
-
-const REAL_MS_PER_TICK = 1000;
+import { GAME_EVENTS } from './constants'; // Importando os eventos da NASA do seu amigo!
 
 export function useBaseSimulation() {
-  const store = useGameStore();
-  const [activeEvent, setActiveEvent] = useState<BaseEvent | null>(null);
-  const [lumiMessage, setLumiMessage] = useState('Comandante! Gerencie a base e a tripulação com sabedoria.');
+  const isPaused = useGameStore(state => state.isPaused);
+  const tickSimulation = useGameStore(state => state.tickSimulation);
+  const isTrainingMode = useGameStore(state => state.isTrainingMode);
+  const language = useGameStore(state => state.language) || 'pt';
+  const togglePause = useGameStore(state => state.togglePause);
 
-  // Motor Principal da Simulação
+  const [activeEvent, setActiveEvent] = useState<any | null>(null);
+  const [lumiMessage, setLumiMessage] = useState<string>('');
+
+  const ticksRef = useRef(0);
+
   useEffect(() => {
-    if (store.isPaused || store.missionStatus !== 'jogando' || activeEvent || store.activeExpedition?.status === 'evento') return;
+    let timer: number;
     
-    const interval = setInterval(() => {
-      store.tickBase();
-      
-      if (store.buildingModules.length > 0) store.progressBuildings(5 * store.simSpeed);
-      if (store.upgradingModules?.length > 0) store.progressUpgrades(5 * store.simSpeed);
-      if (store.activeExpedition) store.progressExpedition(5 * store.simSpeed);
-
-      // Sorteio de Eventos Aleatórios na Base
-      if (Math.random() < 0.002 * store.simSpeed && store.clock.day >= 2 && !activeEvent) {
-        const ev = BASE_EVENTS[Math.floor(Math.random() * BASE_EVENTS.length)];
-        store.togglePause(true);
-        setActiveEvent(ev);
-        setLumiMessage(`ATENÇÃO! ${ev.title}`);
-      }
-    }, REAL_MS_PER_TICK / store.simSpeed);
-
-    return () => clearInterval(interval);
-  }, [
-    store.isPaused, store.simSpeed, store.missionStatus, activeEvent, 
-    store.buildingModules, store.upgradingModules, store.activeExpedition,
-    store.clock.day
-  ]);
-
-  // Mensagens Contextuais do L.U.M.I
-  useEffect(() => {
-    const tired = store.crew.find(c => c.energy < 20 && c.status === 'ativo');
-    if (tired) {
-      setLumiMessage(`Aviso: ${tired.name} está exausto. Ordene descanso antes que colapse!`);
+    if (!isPaused) {
+      timer = window.setInterval(() => {
+        tickSimulation();
+        
+        // ==========================================
+        // MOTOR DE EVENTOS ALEATÓRIOS DA NASA
+        // ==========================================
+        if (!isTrainingMode && !activeEvent) {
+          ticksRef.current += 1;
+          
+          // A cada 20 "ciclos" de tempo, há 25% de chance de ocorrer uma emergência
+          if (ticksRef.current >= 20) {
+            ticksRef.current = 0;
+            
+            if (Math.random() < 0.25) {
+              // Sorteia um evento do arquivo constants
+              const randomNasaEvent = GAME_EVENTS[Math.floor(Math.random() * GAME_EVENTS.length)];
+              
+              // Adaptador: Traduz a estrutura do seu amigo para a estrutura do Modal da Base
+              const mappedEvent = {
+                id: randomNasaEvent.id,
+                title: randomNasaEvent.title[language as keyof typeof randomNasaEvent.title] || randomNasaEvent.title.pt,
+                desc: randomNasaEvent.desc[language as keyof typeof randomNasaEvent.desc] || randomNasaEvent.desc.pt,
+                options: randomNasaEvent.options.map(opt => ({
+                  text: opt.text[language as keyof typeof opt.text] || opt.text.pt,
+                  cost: { [opt.costType]: opt.cost },
+                  // Se o hpMod for negativo, aplica dano ao ESCUDO da base (para não matar a tripulação injustamente)
+                  dmg: opt.hpMod < 0 ? { type: 'shield', amount: Math.abs(opt.hpMod) } : undefined,
+                  // Passamos a consequência para a L.U.M.I. contar depois!
+                  outcomeMsg: opt.outcome[language as keyof typeof opt.outcome] || opt.outcome.pt
+                }))
+              };
+              
+              setActiveEvent(mappedEvent);
+              togglePause(true); // Pausa o jogo automaticamente para a criança poder ler e pensar!
+            }
+          }
+        }
+      }, 1000); 
     }
-  }, [store.crew]);
 
-  return { activeEvent, setActiveEvent, lumiMessage, setLumiMessage };
+    return () => {
+      if (timer) window.clearInterval(timer);
+    };
+  }, [isPaused, tickSimulation, isTrainingMode, activeEvent, language, togglePause]);
+
+  return {
+    activeEvent,
+    setActiveEvent,
+    lumiMessage,
+    setLumiMessage
+  };
 }
