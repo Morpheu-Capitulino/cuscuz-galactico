@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 // ==========================================
@@ -845,7 +845,7 @@ export default function AstroMissionLanding() {
         <MoonSurface />
       </div>
 
-      <Spaceship />
+      <Spaceship isAppLoaded={isAppLoaded} />
       <LumiRobot isAppLoaded={isAppLoaded} textTransm={t.lumiTransm} textSpeech={t.lumiSpeech} />
 
       <section className="absolute bottom-[29%] left-5 z-30 max-w-[48%] border-l-2 border-cyan-400 pl-3 sm:hidden">

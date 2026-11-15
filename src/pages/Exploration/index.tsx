@@ -1,7 +1,7 @@
 // src/pages/Exploration/index.tsx
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useGameStore } from '../../store/gameStore';
-import { Pickaxe, Droplets, Radar, Settings, Package, ShoppingCart, BookOpen, Flame, AlertTriangle, HeartPulse, Wrench, Wind, BatteryCharging, Shield, Rocket, Activity, Info, X, Mountain, FastForward, Zap, Star, Archive } from 'lucide-react';
+import { Pickaxe, Droplets, Radar, Settings, ShoppingCart, BookOpen, Flame, AlertTriangle, HeartPulse, Wrench, Wind, BatteryCharging, Shield, Rocket, Activity, Info, X, Mountain, FastForward, Zap, Star, Archive } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { DICTIONARY, MANUAL_CONTENT, GAME_EVENTS, PLANETS, TARGET_DISTANCE } from './constants';
@@ -100,7 +100,7 @@ export default function Exploration() {
   useEffect(() => { anomaliesRef.current = anomalies; }, [anomalies]);
 
   const [shakeScreen, setShakeScreen] = useState(false);
-  const [turretFlash, setTurretFlash] = useState(false);
+  const [setTurretFlash] = useState(false);
   const [meteorMadness, setMeteorMadness] = useState(false);
   const meteorMadnessTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const comboTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -159,13 +159,13 @@ export default function Exploration() {
   }, []);
 
   const resetAllResources = useCallback(() => {
-    useGameStore.setState(state => ({
-      inventory: { regolith: 0, ice: 0, parts: 0 },
-      indicators: { o2: 100, water: 100, energy: 100 },
-      laserLevel: 1, radarLevel: 1, cargoLevel: 1, engineLevel: 1, coreLevel: 1,
-      droneLevel: 0, shieldLevel: 0, armorLevel: 0, scoopLevel: 0, turretLevel: 0
-    }));
-  }, []);
+  useGameStore.setState({
+    inventory: { regolith: 0, ice: 0, parts: 0 },
+    indicators: { o2: 100, water: 100, food: 100, energy: 100, shield: 100 },
+    laserLevel: 1, radarLevel: 1, cargoLevel: 1, engineLevel: 1, coreLevel: 1,
+    droneLevel: 0, shieldLevel: 0, armorLevel: 0, scoopLevel: 0, turretLevel: 0
+  });
+}, []);
 
   const finishTutorial = useCallback(() => {
     resetAllResources();
@@ -1039,4 +1039,4 @@ export default function Exploration() {
 
     </motion.div>
   );
-}o
+}

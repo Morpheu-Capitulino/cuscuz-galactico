@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Pickaxe, Settings, Droplets, ShoppingCart, X, Crosshair, Activity, Bot, Package, Shield, Rocket, Layers, Cpu, Magnet, Target, ChevronRight, Trophy, Lock, Archive, Fingerprint, Database, FileText } from 'lucide-react';
+import { Pickaxe, Settings, Droplets, ShoppingCart, X, Crosshair, Activity, Bot, Package, Shield, Rocket, Layers, Cpu, Magnet, Target, ChevronRight, Archive, Fingerprint, Database, FileText } from 'lucide-react';
 import { useGameStore } from '../../../store/gameStore';
 
 const colorStyles: Record<string, any> = {
