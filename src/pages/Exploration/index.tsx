@@ -211,9 +211,6 @@ export default function Exploration() {
          if (currentEnergy > 1 || isTutorialPhase) { 
              setProjectiles(prev => [...prev, { id: Date.now(), x: shipPos.current.x, y: shipPos.current.y - 5 }]);
              if (!isTutorialPhase) useGameStore.getState().updateIndicator('energy', -2); 
-             
-             const currentTurret = useGameStore.getState().turretLevel;
-             if(currentTurret > 0) 
          } else {
              spawnFloatingText(shipPos.current.x, shipPos.current.y, t.noEnergy, "text-red-500");
          }
