@@ -1,9 +1,5 @@
-
 export type Screen = 'landing' | 'briefing' | 'exploration' | 'base-builder' | 'report';
 export type MissionStatus = 'playing' | 'victory' | 'defeat';
-
-language: 'en' | 'pt';
-setLanguage: (lang: 'en' | 'pt') => void;
 
 export interface Resources {
   regolith: number;
@@ -19,8 +15,11 @@ export interface Indicators {
   protection: number;
 }
 
-// É esta a exportação que está a faltar!
+// Agora sim, o idioma está guardado corretamente dentro do Estado do Jogo!
 export interface GameState {
+  language: 'en' | 'pt';
+  setLanguage: (lang: 'en' | 'pt') => void;
+  
   currentScreen: Screen;
   day: number;
   missionStatus: MissionStatus;
