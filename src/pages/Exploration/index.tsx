@@ -213,8 +213,7 @@ export default function Exploration() {
              if (!isTutorialPhase) useGameStore.getState().updateIndicator('energy', -2); 
              
              const currentTurret = useGameStore.getState().turretLevel;
-             if(currentTurret > 0) setTurretFlash(true);
-             setTimeout(() => setTurretFlash(false), 100);
+             if(currentTurret > 0) 
          } else {
              spawnFloatingText(shipPos.current.x, shipPos.current.y, t.noEnergy, "text-red-500");
          }
@@ -799,7 +798,7 @@ export default function Exploration() {
               initial={{ scale: 0.2, opacity: 1 }}
               animate={{ scale: 2.5, opacity: 0 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
+              transition={{ duration: 0.5 }}
               style={{ left: `${exp.x}%`, top: `${exp.y}%`, position: 'absolute', transform: 'translate(-50%, -50%)' }}
               className={`w-16 h-16 rounded-full blur-md pointer-events-none z-[80] bg-${exp.color}-400 shadow-[0_0_30px_rgba(255,255,255,0.8)]`}
             />
@@ -986,7 +985,7 @@ export default function Exploration() {
 
       <AnimatePresence>
         {hasWon && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1, backgroundColor: 'rgba(255, 255, 255, 1)' }} transition={{ duration: 3, ease: "easeInOut" }} className="absolute inset-0 z-[500] flex flex-col items-center justify-center pointer-events-auto">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1, backgroundColor: 'rgba(255, 255, 255, 1)' }} transition={{ duration: 3 }} className="absolute inset-0 z-[500] flex flex-col items-center justify-center pointer-events-auto">
             <motion.div initial={{ y: 50, scale: 0.8, opacity: 0 }} animate={{ y: 0, scale: 1, opacity: 1 }} transition={{ delay: 1.5, duration: 1 }} className="flex flex-col items-center text-center">
               <Rocket size={64} className="text-slate-800 mb-6" />
               <h1 className="text-slate-900 font-black text-4xl md:text-5xl uppercase tracking-[0.2em] mb-4">{t.landingSuccess}</h1>

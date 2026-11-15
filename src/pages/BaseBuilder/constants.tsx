@@ -1,4 +1,3 @@
-import React from 'react';
 import { BookOpen, AlertTriangle, ShieldAlert, Zap } from 'lucide-react';
 
 export const TARGET_DISTANCE = 3000;

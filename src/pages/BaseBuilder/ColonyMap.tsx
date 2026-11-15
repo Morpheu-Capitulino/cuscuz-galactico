@@ -1,7 +1,8 @@
 import { useGameStore } from '../../store/gameStore';
 import { Target, Bot, Construction, MessageSquare } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useEffect, useRef, useState, ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { sfx } from './soundEffects';
 
 interface ColonyMapProps {

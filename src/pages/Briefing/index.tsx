@@ -1,7 +1,6 @@
 // Arquivo combinado: visual original da L.U.M.I. + carregamento e decolagem cinematográfica com nova L.U.M.I Viva.
 import { useState, useEffect, useRef } from 'react';
 import type { PointerEvent } from 'react';
-import { useGameStore } from '../../store/gameStore';
 
 import {
   MapPin, Clock, Users, ShieldAlert, Globe, Fingerprint, ChevronRight, FastForward, Radio, Satellite, Orbit, Activity, Rocket, Zap,

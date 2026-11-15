@@ -27,7 +27,7 @@ export const STRUCTURES: StructureData[] = [
     id: 'water-recycler',
     name: 'Water Recycler',
     description: 'Purifica e recupera parte da água consumida pela tripulação.',
-    cost: { regolith: 40, solarPower: 20 },
+    cost: { regolith: 40, energy: 20 },
     iconRef: 'droplet'
   },
   {

@@ -114,7 +114,7 @@ export interface GameState {
 
 export const useGameStore = create<GameState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       language: 'pt',
       setLanguage: (lang) => set({ language: lang }),
       
@@ -293,7 +293,7 @@ export const useGameStore = create<GameState>()(
         activeExpedition: { id: exp.id, progress: 0, status: 'ida', duration: exp.duration, expData: exp }
       }),
 
-      resolveExpeditionEvent: (option) => set(s => {
+      resolveExpeditionEvent: (_option) => set(s => {
         if (!s.activeExpedition) return s;
         return { 
           activeExpedition: { ...s.activeExpedition, status: 'ida', currentEvent: undefined },

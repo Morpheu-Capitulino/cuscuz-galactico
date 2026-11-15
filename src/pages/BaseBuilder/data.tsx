@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Home, Droplets, Sprout, Sun, Shield, HeartPulse, BedDouble } from 'lucide-react';
-import type { Inventory, BaseIndicators } from '../../store/gameStore';
+import type { Inventory } from '../../store/gameStore';
 
 export type StructureId = 'habitat' | 'purifier' | 'greenhouse' | 'solar' | 'radiation' | 'medical' | 'dormitory';
 
